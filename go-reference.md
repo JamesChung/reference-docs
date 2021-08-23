@@ -1,4 +1,4 @@
-# Go Types
+# Go Reference
 
 ## Table of Contents
 
