@@ -259,7 +259,7 @@ default:
 
 Since the purpose of a type switch is to derive a new variable from an existing one, it is idiomatic to assign the variable being switched on to a variable of the same name `(i := i.(type))`, making this one of the few places where shadowing is a good idea. To make the comments more readable, our example doesn’t use shadowing.
 
-## Function Types
+### Function Types
 
 _**Go allows methods on any user-defined type, including user-defined function types.**_
 
