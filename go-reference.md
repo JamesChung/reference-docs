@@ -16,6 +16,9 @@
 * [Pointer Performance](#Pointer-Performance)
 * [Embedding](#Embedding)
   * [Embedding Interfaces](#Embedding-Interfaces)
+* [Interfaces](#Interfaces)
+  * [Type Assertions](#Type-Assertions)
+  * [Type Switches](#Type-Switches)
 
 ## Basic Types
 
@@ -197,3 +200,75 @@ func main() {
   err.Error()
 }
 ```
+
+## Interfaces
+
+* If you need a data structure beyond a slice, array, or map, and you don’t want it to only work with a single type, you need to use a field of type `interface{}` to hold its value.
+* An empty interface type simply states that the variable can store any value whose type implements zero or more methods.
+* Rather than writing a single factory function that returns different instances behind an interface based on input parameters, try to write separate factory functions for each concrete type.
+* when invoking a function with parameters of interface types, a heap allocation occurs for each of the interface parameters.
+* In order for an interface to be considered nil both the type and the value must be nil.
+* In the Go runtime, interfaces are implemented as a pair of pointers, one to the underlying type and one to the underlying value. As long as the type is non-nil, the interface is non-nil. (Since you cannot have a variable without a type, if the value pointer is non-nil, the type pointer is always non-nil.)
+* If an interface is nil, invoking any methods on it triggers a panic
+
+### Type Assertions
+
+#### The comma ok Idiom:
+
+```go
+val, ok := i.(int)
+if !ok {
+  return fmt.Errorf("unexpected type for %v", i)
+}
+// continue logic...
+```
+
+The boolean ok is set to true if the type conversion was successful.
+
+If it was not, ok is set to false and the other variable is set to its zero value.
+
+### Type Switches
+
+A type switch looks a lot like the switch statement, but instead of specifying a boolean operation, you specify a variable of an interface type and follow it with `.(type)`.
+
+_**Note:**_
+If you list more than one type on a case, the new variable is of type `interface{}`.
+
+```go
+switch val := i.(type) {
+case nil:
+  // i is nil, type of val is interface{}
+case int:
+  // val is of type int
+case string:
+  // val is of type string
+default:
+  // no idea what i is, val is defaulted to type interface{}
+}
+```
+
+**Note:**
+
+Since the purpose of a type switch is to derive a new variable from an existing one, it is idiomatic to assign the variable being switched on to a variable of the same name `(i := i.(type))`, making this one of the few places where shadowing is a good idea. To make the comments more readable, our example doesn’t use shadowing.
+
+## Function Types
+
+_**Go allows methods on any user-defined type, including user-defined function types.**_
+
+They allow functions to implement interfaces. The most common usage is for HTTP handlers.
+
+By using a type conversion to http.HandlerFunc, any function that has the signature `func(http.ResponseWriter,*http.Request)` can be used as an http.Handler:
+
+```go
+type HandlerFunc func(http.ResponseWriter, *http.Request)
+
+func (f HandlerFunc) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+  f(writer, reader)
+}
+```
+
+This lets you implement HTTP handlers using functions, methods, or closures using the exact same code path as the one used for other types that meet the `http.Handler` interface.
+
+The question becomes: when should your function or method specify an input parameter of a function type and when should you use an interface?
+
+If your single function is likely to depend on many other functions or other state that’s not specified in its input parameters, use an interface parameter and define a function type to bridge a function to the interface.
