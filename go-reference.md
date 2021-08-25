@@ -272,3 +272,199 @@ This lets you implement HTTP handlers using functions, methods, or closures usin
 The question becomes: when should your function or method specify an input parameter of a function type and when should you use an interface?
 
 If your single function is likely to depend on many other functions or other state that’s not specified in its input parameters, use an interface parameter and define a function type to bridge a function to the interface.
+
+## Errors
+
+Go handles errors by returning a value of type error as the last return value for a function. This is entirely by convention, but it is such a strong convention that it should never be breached.
+
+When a function executes as expected, nil is returned for the error parameter. If something goes wrong, an error value is returned instead.
+
+Error messages should not be capitalized nor should they end with punctuation or a newline.
+
+In most cases, you should set the other return values to their zero values when a non-nil error is returned.
+
+`error` is a built-in interface that defines a single method:
+
+```go
+type error interface {
+  Error() string
+}
+```
+
+Anything that implements this interface is considered an error.
+
+### Sentinel Errors
+
+_The name descends from the practice in computer programming of using a specific value to signify that no further processing is possible. So to with Go, we use specific values to signify an error._
+
+* Sentinel errors are one of the few variables that are declared at the package level.
+
+* By convention, their names start with Err (with the notable exception of io.EOF).
+
+* They should be treated as read-only; there’s no way for the Go compiler to enforce this, but it is a programming error to change their value.
+Sentinel errors are usually used to indicate that you cannot start or continue processing.
+
+```go
+func main() {
+  data := []byte("This is not a zip file")
+  notAZipFile := bytes.NewReader(data)
+  _, err := zip.NewReader(notAZipFile, int64(len(data)))
+  if err == zip.ErrFormat {
+    fmt.Println("Told you so")
+  }
+}
+```
+
+### Custom Errors
+
+When using custom errors, never define a variable to be of the type of your custom error. Either explicitly return nil when no error occurs or define the variable to be of type error.
+
+**WARNING: Don’t use a type assertion or a type switch to access the fields and methods of a custom error. Instead, use `errors.As`**
+
+### Wrapping Errors
+
+When an error is passed back through your code, you often want to add additional context to it. This context can be the name of the function that received the error or the operation it was trying to perform. When you preserve an error while adding additional information, it is called wrapping the error. When you have a series of wrapped errors, it is called an error chain.
+
+There’s a function in the Go standard library that wraps errors, and we’ve already seen it. The `fmt.Errorf` function has a special verb, %w. Use this to create an error whose formatted string includes the formatted string of another error and which contains the original error as well. The convention is to write `: %w` at the end of the error format string and make the error to be wrapped the last parameter passed to `fmt.Errorf`.
+
+#### Unwrap
+
+The standard library also provides a function for unwrapping errors, the `Unwrap` function in the errors package. You pass it an error and it returns the wrapped error, if there is one. If there isn’t, it returns `nil`.
+
+```go
+func fileChecker(name string) error {
+    f, err := os.Open(name)
+    if err != nil {
+        return fmt.Errorf("in fileChecker: %w", err)
+    }
+    f.Close()
+    return nil
+}
+
+func main() {
+    err := fileChecker("not_here.txt")
+    if err != nil {
+        fmt.Println(err)
+        if wrappedErr := errors.Unwrap(err); wrappedErr != nil {
+            fmt.Println(wrappedErr)
+        }
+    }
+}
+```
+
+You don’t usually call `errors.Unwrap` directly. Instead, you use `errors.Is` and `errors.As` to find a specific wrapped error.
+
+**Note: If you want to wrap an error with your custom error type, your error type needs to implement the method Unwrap. This method takes in no parameters and returns an error.**
+
+```go
+type StatusErr struct {
+    Status Status
+    Message string
+    err error
+}
+
+func (se StatusErr) Error() string {
+    return se.Message
+}
+
+func (se StatusError) Unwrap() error {
+    return se.err
+}
+
+// Wrap underlying errors with StatusErr
+func LoginAndGetData(uid, pwd, file string) ([]byte, error) {
+    err := login(uid,pwd)
+    if err != nil {
+        return nil, StatusErr {
+            Status: InvalidLogin,
+            Message: fmt.Sprintf("invalid credentials for user %s",uid),
+            Err: err,
+        }
+    }
+    data, err := getData(file)
+    if err != nil {
+        return nil, StatusErr {
+            Status: NotFound,
+            Message: fmt.Sprintf("file %s not found",file),
+            Err: err,
+        }
+    }
+    return data, nil
+}
+```
+
+If you want to create a new error that contains the message from another error, but don’t want to wrap it, use `fmt.Errorf` to create an error, but use the `%v` verb instead of `%w`:
+
+```go
+err := internalFunction()
+if err != nil {
+    return fmt.Errorf("internal failure: %v", err)
+}
+```
+
+#### Is and As
+
+Use `errors.Is` when you are looking for a specific instance or specific values. Use `errors.As` when you are looking for a specific type.
+
+##### Is
+
+The `errors.Is` function returns `true` if there is an error in the error chain that matches the provided sentinel error.
+
+By default, `errors.Is` uses `==` to compare each wrapped error with the specified error. If this does not work for an error type that you define (for example, if your error is a noncomparable type), implement the `Is` method on your error:
+
+```go
+type MyErr struct {
+    Codes []int
+}
+
+func (me MyErr) Error() string {
+    return fmt.Sprintf("codes: %v", me.Codes)
+}
+
+func (me MyErr) Is(target error) bool {
+    if me2, ok := target.(MyErr); ok {
+        return reflect.DeepEqual(me, me2)
+    }
+    return false
+}
+```
+
+##### As
+
+The `errors.As` function allows you to check if a returned error (or any error it wraps) matches a specific type.
+
+You don’t have to pass a pointer to a variable of an error type as the second parameter to `errors.As`. You can pass a pointer to an interface to find an error that meets the interface.
+
+```go
+err := AFunctionThatReturnsAnError()
+var coder interface {
+    Code() int
+}
+if errors.As(err, &coder) {
+    fmt.Println(coder.Code())
+}
+```
+
+### Recover
+
+As soon as a panic happens, the current function exits immediately and any defers attached to the current function start running.
+
+When those defers complete, the defers attached to the calling function run, and so on, until main is reached. The program then exits with a message and a stack trace.
+
+The built-in recover function is called from within a defer to check if a panic happened. If there was a panic, the value assigned to the panic is returned. Once a recover happens, execution continues normally.
+
+```go
+func div60(i int) {
+    defer func() {
+        if v := recover(); v != nil {
+            fmt.Println(v)
+        }
+    }()
+    fmt.Println(60 / i)
+}
+```
+
+**There’s a specific pattern for using recover. We register a function with defer to handle a potential panic. We call recover within an if statement and check to see if a non-nil value was found. You must call recover from within a defer because once a panic happens, only deferred functions are run.**
+
+**There is one situation where recover is recommended.**
+If you are creating a library for third parties, do not let panics escape the boundaries of your public API. If a panic is possible, a public function should use a recover to convert the panic into an error, return it, and let the calling code decide what to do with them.
