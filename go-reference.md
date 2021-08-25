@@ -19,8 +19,6 @@
 * [Interfaces](#Interfaces)
   * [Type Assertions](#Type-Assertions)
   * [Type Switches](#Type-Switches)
-  * [Type Assertions](#Type-Assertions)
-  * [Type Switches](#Type-Switches)
   * [Function Types](#Function-Types)
 * [Errors](#Errors)
   * [Sentinel Errors](#Sentinel-Errors)
