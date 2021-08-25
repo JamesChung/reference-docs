@@ -310,6 +310,10 @@ _The name descends from the practice in computer programming of using a specific
 * They should be treated as read-only; there’s no way for the Go compiler to enforce this, but it is a programming error to change their value.
 Sentinel errors are usually used to indicate that you cannot start or continue processing.
 
+* Be sure you need a sentinel error before you define one. Once you define one, it is part of your public API and you have committed to it being available in all future backward-compatible releases.
+
+* It’s far better to reuse one of the existing ones in the standard library or to define an error type that includes information about the condition that caused the error to be returned
+
 ```go
 func main() {
   data := []byte("This is not a zip file")
@@ -320,6 +324,8 @@ func main() {
   }
 }
 ```
+
+If you have an error condition that indicates a specific state has been reached in your application where no further processing is possible and no contextual information needs to be used to explain the error state, a sentinel error is the correct choice.
 
 ### Custom Errors
 
