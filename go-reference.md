@@ -28,8 +28,8 @@
   * [Recover](#Recover)
 * [Modules & Packages](#Modules-&-Packages)
   * [Godoc](#Godoc)
-  * [The `internal` Package](#The-`internal`-Package)
-  * [The `init` Function](#The-`init`-Function)
+  * [The `internal` Package](#The-internal-Package)
+  * [The `init` Function](#The-init-Function)
 
 ## Basic Types
 
