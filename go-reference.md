@@ -12,6 +12,7 @@
   * [Complex Types](#Complex-Types)
 * [Aggregate Types](#Aggregate-Types)
 * [Reference Types](#Reference-Types)
+* [Type Alias](#Type-Alias)
 * [Universe Block](#Universe-Block)
 * [Pointer Performance](#Pointer-Performance)
 * [Embedding](#Embedding)
@@ -25,6 +26,10 @@
   * [Custom Errors](#Custom-Errors)
   * [Wrapping Errors](#Wrapping-Errors)
   * [Recover](#Recover)
+* [Modules & Packages](#Modules-&-Packages)
+  * [Godoc](#Godoc)
+  * [The `internal` Package](#The-`internal`-Package)
+  * [The `init` Function](#The-`init`-Function)
 
 ## Basic Types
 
@@ -81,6 +86,32 @@
 * [Function](https://golang.org/ref/spec#Function_types) - `func(type...)type...`
 * [Interface](https://golang.org/ref/spec#Interface_types) - `interface{}`
 * Invalid - `reflect.Invalid`
+
+## Type Alias
+
+To create an alias, we use the type keyword, the name of the alias, an equals sign, and the name of the original type. The alias has the same fields and methods as the original type.
+
+The alias can even be assigned to a variable of the original type without a type conversion.
+
+You can alias a type that’s defined in the same package as the original type or in a different package. You can even alias a type from another module.
+
+There is one drawback to an alias in another package: you cannot use an alias to refer to the unexported methods and fields of the original type.
+
+There are two kinds of exported identifiers that can’t have alternate names. The first is a package-level variable. The second is a field in a struct. Once you choose a name for an exported struct field, there’s no way to create an alternate name.
+
+```go
+type Foo struct {
+    atr string
+}
+
+type Bar = Foo
+
+func FooBar(f Foo) {
+    // can take both Foo and Bar
+}
+```
+
+One important point to remember: an alias is just another name for a type. If you want to add new methods or change the fields in an aliased struct, you must add them to the original type.
 
 ---
 
@@ -480,3 +511,41 @@ func div60(i int) {
 
 **There is one situation where recover is recommended.**
 If you are creating a library for third parties, do not let panics escape the boundaries of your public API. If a panic is possible, a public function should use a recover to convert the panic into an error, return it, and let the calling code decide what to do with them.
+
+## Modules & Packages
+
+* The package name . places all the exported identifiers in the imported package into the current package’s namespace; you don’t need a prefix to refer to them.
+
+* Package names can be shadowed.
+
+### Godoc
+
+The rules/conventions are:
+
+* Place the comment directly before the item being documented with no blank lines between the comment and the declaration of the item.
+
+* Start the comment with two forward slashes (//) followed by the name of the item.
+
+* Use a blank comment to break your comment into multiple paragraphs.
+
+* Insert preformatted comments by indenting the lines.
+
+Comments before the package declaration create package-level comments. If you have lengthy comments for the package (such as the extensive formatting documentation in the fmt package), the convention is to put the comments in a file in your package called `doc.go`.
+
+### The `internal` Package
+
+Sometimes you want to share a function, type, or constant between packages in your module, but you don’t want to make it part of your API. Go supports this via the special internal package name.
+
+When you create a package called internal, the exported identifiers in that package and its subpackages are only accessible to the direct parent package of internal and the sibling packages of internal.
+
+### The `init` Function
+
+When you declare a function named init that takes no parameters and returns no values, it runs the first time the package is referenced by another package.
+
+Since init functions do not have any inputs or outputs, they can only work by side effect, interacting with package-level functions and variables.
+
+Go allows you to declare multiple init functions in a single package, or even in a single file in a package.
+
+The primary use of init functions today is to initialize package-level variables that can’t be configured in a single assignment.
+
+You should only declare a single init function per package, even though Go allows you to define multiple.
