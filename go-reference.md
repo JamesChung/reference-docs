@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-* [#Commands](#Commands)
+* [Commands](#Commands)
 * [Basic Types](#Basic-Types)
   * [String Types](#String-Types)
   * [Boolean Types](#Boolean-Types)
