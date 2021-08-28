@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+* [#Commands](#Commands)
 * [Basic Types](#Basic-Types)
   * [String Types](#String-Types)
   * [Boolean Types](#Boolean-Types)
@@ -26,10 +27,19 @@
   * [Custom Errors](#Custom-Errors)
   * [Wrapping Errors](#Wrapping-Errors)
   * [Recover](#Recover)
-* [Modules & Packages](#Modules-&-Packages)
+* [Modules and Packages](#Modules-and-Packages)
   * [Godoc](#Godoc)
   * [The `internal` Package](#The-internal-Package)
   * [The `init` Function](#The-init-Function)
+  * [Versioning](#Versioning)
+
+## Commands
+
+`go list -m -versions <module path>`
+
+`go install <module path>@<version || tag>`
+
+`go get -u=patch <module path>`
 
 ## Basic Types
 
@@ -512,11 +522,17 @@ func div60(i int) {
 **There is one situation where recover is recommended.**
 If you are creating a library for third parties, do not let panics escape the boundaries of your public API. If a panic is possible, a public function should use a recover to convert the panic into an error, return it, and let the calling code decide what to do with them.
 
-## Modules & Packages
+## Modules and Packages
 
 * The package name . places all the exported identifiers in the imported package into the current package’s namespace; you don’t need a prefix to refer to them.
 
 * Package names can be shadowed.
+
+Whenever you run any go command that requires dependencies (such as go run, go build, go test, or even go list), any imports that aren’t already in go.mod are downloaded to a cache.
+
+* The go.mod file is automatically updated to include the module path that contains the package and the version of the module.
+
+* The go.sum file is updated with two entries: one with the module, its version, and a hash of the module, the other with the hash of the go.mod file for the module.
 
 ### Godoc
 
@@ -549,3 +565,11 @@ Go allows you to declare multiple init functions in a single package, or even in
 The primary use of init functions today is to initialize package-level variables that can’t be configured in a single assignment.
 
 You should only declare a single init function per package, even though Go allows you to define multiple.
+
+### Versioning
+
+Go supports two ways for creating the different import paths:
+
+* Create a subdirectory within your module named vN, where N is the major version of your module. For example, if you are creating version 2 of your module, call this directory v2. Copy your code into this subdirectory, including the README and LICENSE files.
+
+* Create a branch in your version control system. You can either put the old code on the branch or the new code. Name the branch vN if you are putting the new code on the branch, or vN-1 if you are putting the old code there. For example, if you are creating version 2 of your module and want to put version 1 code on the branch, name the branch v1.
