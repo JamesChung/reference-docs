@@ -45,6 +45,19 @@
 
 ## Generally Helpful Info
 
+
+### Get top 10 beginning lines of a file
+
+```sh
+head -n 10 [file]
+```
+
+### Streams tail end contents of a file
+
+```sh
+tail -f [file]
+```
+
 ### Using an Alias for `kubectl`
 
 ```sh
@@ -145,6 +158,33 @@ kubectl delete [resource] [name] --grace-period=0 --force
 
 ```sh
 kubectl get [resource] [name] -o yaml > manifest.yaml
+```
+
+## `logs`
+
+### Get logs from a specific container
+
+```sh
+kubectl logs business-app -c configurer
+```
+
+### Get logs from previously ran container
+
+```sh
+kubectl logs [resource]/[pod] -p
+```
+
+### Stream logs
+
+```sh
+kubectl logs [resource]/[pod] -f
+```
+
+### Aggregated logs from all containers with a specifc label
+
+```sh
+kubectl logs --selector=[label]
+kubectl logs --selector=app=my-app
 ```
 
 ## ConfigMap
@@ -254,6 +294,8 @@ fred
 
 ## Secret
 
+> If you create secrets imperitively then kubernetes will automatically base64 encode your secret. Conversely if you create secrets declaritively then you must base64 encode the secret when in most cases.
+
 ### Creating a generic Secret
 
 #### *Literal Values*
@@ -275,6 +317,8 @@ kubectl create secret generic ssh-key --from-file=id_rsa=~/.ssh/id_rsa
 ```
 
 ### A Secret with Base64-encoded values
+
+> You have to Base64-encode the configuration data value yourself when using the type `Opaque`.
 
 ```sh
 $ echo -n 's3cre!' | base64
@@ -512,4 +556,191 @@ metadata:
 spec:
   serviceAccountName: custom
 ...
+```
+
+## Multi-Container Pods
+
+### A Pod defining an init Container
+
+> If an init container produces an error, the whole Pod is restarted, causing all init containers to run again in sequential order. For init containers, Kubernetes provides a separate section: spec.initContainers. Init containers are always executed before the main application containers, regardless of the definition order in the manifest.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: business-app
+spec:
+  initContainers:
+  - name: configurer
+    image: busybox:1.32.0
+    command: ['sh', '-c', 'echo Configuring application... && \
+              mkdir -p /usr/shared/app && echo -e "{\"dbConfig\": \
+              {\"host\":\"localhost\",\"port\":5432,\"dbName\":\"customers\"}}" \
+              > /usr/shared/app/config.json']
+    volumeMounts:
+    - name: configdir
+      mountPath: "/usr/shared/app"
+  containers:
+  - image: bmuschko/nodejs-read-config:1.0.0
+    name: web
+    ports:
+    - containerPort: 8080
+    volumeMounts:
+    - name: configdir
+      mountPath: "/usr/shared/app"
+  volumes:
+  - name: configdir
+    emptyDir: {}
+```
+
+### The Sidecar Pattern
+
+Common use cases:
+
+- Synchronization
+- Logging
+- Watcher
+
+> The sidecars are not part of the main traffic or API of the primary application. They usually operate asynchronously and are not involved in the public API.
+
+![sidecar pattern](images/sidecar_pattern.png)
+
+#### An exemplary sidecar pattern implementation
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    volumeMounts:
+    - name: logs-vol
+      mountPath: /var/log/nginx
+  - name: sidecar
+    image: busybox
+    command: ["sh","-c","while true; do if [ \"$(cat /var/log/nginx/error.log \
+              | grep 'error')\" != \"\" ]; then echo 'Error discovered!'; fi; \
+              sleep 10; done"]
+    volumeMounts:
+    - name: logs-vol
+      mountPath: /var/log/nginx
+  volumes:
+  - name: logs-vol
+    emptyDir: {}
+```
+
+### The Adapter Pattern
+
+> The adapter pattern transforms the output produced by the application to make it consumable in the format needed by another part of the system.
+
+![adapter pattern](images/adapter_pattern.png)
+
+#### An exemplary adapter pattern implementation
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: adapter
+spec:
+  containers:
+  - args:
+    - /bin/sh
+    - -c
+    - 'while true; do echo "$(date) | $(du -sh ~)" >> /var/logs/diskspace.txt; \
+       sleep 5; done;'
+    image: busybox
+    name: app
+    volumeMounts:
+      - name: config-volume
+        mountPath: /var/logs
+  - image: busybox
+    name: transformer
+    args:
+    - /bin/sh
+    - -c
+    - 'sleep 20; while true; do while read LINE; do echo "$LINE" | cut -f2 -d"|" \
+       >> $(date +%Y-%m-%d-%H-%M-%S)-transformed.txt; done < \
+       /var/logs/diskspace.txt; sleep 20; done;'
+    volumeMounts:
+    - name: config-volume
+      mountPath: /var/logs
+  volumes:
+  - name: config-volume
+    emptyDir: {}
+```
+
+### The Amassador Pattern
+
+The ambassador pattern provides a proxy for communicating with external services.
+
+The overarching goal is to hide and/or abstract the complexity of interacting with other parts of the system.
+
+Typical responsibilities include retry logic upon a request failure, security concerns like providing authentication or authorization, or monitoring latency or resource usage.
+
+![ambassador pattern](images/ambassador_pattern.png)
+
+#### Node.js HTTP rate limiter implementation
+
+```javascript
+const express = require('express');
+const app = express();
+const rateLimit = require('express-rate-limit');
+const https = require('https');
+
+const rateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message:
+    'Too many requests have been made from this IP, please try again after an hour'
+});
+
+app.get('/test', rateLimiter, function (req, res) {
+  console.log('Received request...');
+  var id = req.query.id;
+  var url = 'https://postman-echo.com/get?test=' + id;
+  console.log("Calling URL %s", url);
+
+  https.get(url, (resp) => {
+    let data = '';
+
+    resp.on('data', (chunk) => {
+      data += chunk;
+    });
+
+    resp.on('end', () => {
+      res.send(data);
+    });
+
+    }).on("error", (err) => {
+      res.send(err.message);
+    });
+})
+
+var server = app.listen(8081, function () {
+  var port = server.address().port
+  console.log("Ambassador listening on port %s...", port)
+})
+```
+
+#### An exemplary ambassador pattern implementation
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rate-limiter
+spec:
+  containers:
+  - name: business-app
+    image: bmuschko/nodejs-business-app:1.0.0
+    ports:
+    - containerPort: 8080
+  - name: ambassador
+    image: bmuschko/nodejs-ambassador:1.0.0
+    ports:
+    - containerPort: 8081
 ```
