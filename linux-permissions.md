@@ -1,5 +1,8 @@
 # Linux Permissions
 
+- [BusyBox / Alpine](#busybox---alpine)
+- [Most Linux distros](#most-linux-distros)
+
 ## BusyBox / Alpine
 
 ```sh
