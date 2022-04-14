@@ -2,36 +2,41 @@
 
 ## Table of Contents
 
-* [Commands](#Commands)
-* [Basic Types](#Basic-Types)
-  * [String Types](#String-Types)
-  * [Boolean Types](#Boolean-Types)
-  * [Integer types](#Integer-Types)
-    * [Unsigned Types](#Unsigned-Types)
-    * [Signed Types](#Signed-Types)
-  * [Floating Point Types](#Floating-Point-Types)
-  * [Complex Types](#Complex-Types)
-* [Aggregate Types](#Aggregate-Types)
-* [Reference Types](#Reference-Types)
-* [Type Alias](#Type-Alias)
-* [Universe Block](#Universe-Block)
-* [Pointer Performance](#Pointer-Performance)
-* [Embedding](#Embedding)
-  * [Embedding Interfaces](#Embedding-Interfaces)
-* [Interfaces](#Interfaces)
-  * [Type Assertions](#Type-Assertions)
-  * [Type Switches](#Type-Switches)
-  * [Function Types](#Function-Types)
-* [Errors](#Errors)
-  * [Sentinel Errors](#Sentinel-Errors)
-  * [Custom Errors](#Custom-Errors)
-  * [Wrapping Errors](#Wrapping-Errors)
-  * [Recover](#Recover)
-* [Modules and Packages](#Modules-and-Packages)
-  * [Godoc](#Godoc)
-  * [The `internal` Package](#The-internal-Package)
-  * [The `init` Function](#The-init-Function)
-  * [Versioning](#Versioning)
+- [Commands](#commands)
+- [Basic Types](#basic-types)
+  - [String Types](https://golang.org/ref/spec#String_types)
+  - [Boolean Types](https://golang.org/ref/spec#Boolean_types)
+  - [Integer Types](https://golang.org/ref/spec#Numeric_types)
+    - [Unsigned Types](#unsigned-types)
+    - [Signed Types](#signed-types)
+  - [Floating Point Types](https://golang.org/ref/spec#Numeric_types)
+  - [Complex Types](https://golang.org/ref/spec#Numeric_types)
+- [Aggregate Types](#aggregate-types)
+- [Reference Types](#reference-types)
+- [Type Alias](#type-alias)
+- [Universe Block](https://golang.org/ref/spec#Predeclared_identifiers)
+- [Pointer Performance](https://github.com/learning-go-book/pointer_performance)
+- [Embedding](#embedding)
+  - [Embedding Interfaces](#embedding-interfaces)
+- [Interfaces](#interfaces)
+  - [Type Assertions](#type-assertions)
+    - [The comma ok Idiom:](#the-comma-ok-idiom-)
+  - [Type Switches](#type-switches)
+  - [Function Types](#function-types)
+- [Errors](#errors)
+  - [Sentinel Errors](#sentinel-errors)
+  - [Custom Errors](#custom-errors)
+  - [Wrapping Errors](#wrapping-errors)
+    - [Unwrap](#unwrap)
+    - [Is and As](#is-and-as)
+      - [Is](#is)
+      - [As](#as)
+  - [Recover](#recover)
+- [Modules and Packages](#modules-and-packages)
+  - [Godoc](#godoc)
+  - [The `internal` Package](#the--internal--package)
+  - [The `init` Function](#the--init--function)
+  - [Versioning](#versioning)
 
 ## Commands
 
@@ -45,57 +50,57 @@
 
 ### [String Types](https://golang.org/ref/spec#String_types)
 
-* `string`
-* `rune`    (`int32`)
+- `string`
+- `rune`    (`int32`)
 
 ### [Boolean Types](https://golang.org/ref/spec#Boolean_types)
 
-* `true`
-* `false`
+- `true`
+- `false`
 
 ### [Integer Types](https://golang.org/ref/spec#Numeric_types)
 
 #### Unsigned Types
 
-* `uint`    (usually based on CPU arch)
-* `uint8`   (`byte`)
-* `uint16`
-* `uint32`
-* `uint64`
-* `uintptr` (usually based on CPU arch)
+- `uint`    (usually based on CPU arch)
+- `uint8`   (`byte`)
+- `uint16`
+- `uint32`
+- `uint64`
+- `uintptr` (usually based on CPU arch)
 
 #### Signed Types
 
-* `int`     (usually based on CPU arch)
-* `int8`
-* `int16`
-* `int32`   (`rune`)
-* `int64`
+- `int`     (usually based on CPU arch)
+- `int8`
+- `int16`
+- `int32`   (`rune`)
+- `int64`
 
 ### [Floating Point Types](https://golang.org/ref/spec#Numeric_types)
 
-* `float32`
-* `float64`
+- `float32`
+- `float64`
 
 ### [Complex Types](https://golang.org/ref/spec#Numeric_types)
 
-* `complex64`
-* `complex128`
+- `complex64`
+- `complex128`
 
 ## Aggregate Types
 
-* [Array](https://golang.org/ref/spec#Array_types) - `[...]array`
-* [Struct](https://golang.org/ref/spec#Struct_types) - `struct{}`
+- [Array](https://golang.org/ref/spec#Array_types) - `[...]array`
+- [Struct](https://golang.org/ref/spec#Struct_types) - `struct{}`
 
 ## Reference Types
 
-* [Slice](https://golang.org/ref/spec#Slice_types) - `[]type`
-* [Channel](https://golang.org/ref/spec#Channel_types) - `chan type`
-* [Pointer](https://golang.org/ref/spec#Pointer_types) - `*type`
-* [Map](https://golang.org/ref/spec#Map_types) - `map[type]type`
-* [Function](https://golang.org/ref/spec#Function_types) - `func(type...)type...`
-* [Interface](https://golang.org/ref/spec#Interface_types) - `interface{}`
-* Invalid - `reflect.Invalid`
+- [Slice](https://golang.org/ref/spec#Slice_types) - `[]type`
+- [Channel](https://golang.org/ref/spec#Channel_types) - `chan type`
+- [Pointer](https://golang.org/ref/spec#Pointer_types) - `*type`
+- [Map](https://golang.org/ref/spec#Map_types) - `map[type]type`
+- [Function](https://golang.org/ref/spec#Function_types) - `func(type...)type...`
+- [Interface](https://golang.org/ref/spec#Interface_types) - `interface{}`
+- Invalid - `reflect.Invalid`
 
 ## Type Alias
 
@@ -250,17 +255,17 @@ func main() {
 
 ## Interfaces
 
-* If you need a data structure beyond a slice, array, or map, and you don’t want it to only work with a single type, you need to use a field of type `interface{}` to hold its value.
-* An empty interface type simply states that the variable can store any value whose type implements zero or more methods.
-* Rather than writing a single factory function that returns different instances behind an interface based on input parameters, try to write separate factory functions for each concrete type.
-* when invoking a function with parameters of interface types, a heap allocation occurs for each of the interface parameters.
-* In order for an interface to be considered nil both the type and the value must be nil.
-* In the Go runtime, interfaces are implemented as a pair of pointers, one to the underlying type and one to the underlying value. As long as the type is non-nil, the interface is non-nil. (Since you cannot have a variable without a type, if the value pointer is non-nil, the type pointer is always non-nil.)
-* If an interface is nil, invoking any methods on it triggers a panic
+- If you need a data structure beyond a slice, array, or map, and you don’t want it to only work with a single type, you need to use a field of type `interface{}` to hold its value.
+- An empty interface type simply states that the variable can store any value whose type implements zero or more methods.
+- Rather than writing a single factory function that returns different instances behind an interface based on input parameters, try to write separate factory functions for each concrete type.
+- when invoking a function with parameters of interface types, a heap allocation occurs for each of the interface parameters.
+- In order for an interface to be considered nil both the type and the value must be nil.
+- In the Go runtime, interfaces are implemented as a pair of pointers, one to the underlying type and one to the underlying value. As long as the type is non-nil, the interface is non-nil. (Since you cannot have a variable without a type, if the value pointer is non-nil, the type pointer is always non-nil.)
+- If an interface is nil, invoking any methods on it triggers a panic
 
 ### Type Assertions
 
-#### The comma ok Idiom:
+#### The comma ok Idiom
 
 ```go
 val, ok := i.(int)
@@ -344,16 +349,16 @@ Anything that implements this interface is considered an error.
 
 _The name descends from the practice in computer programming of using a specific value to signify that no further processing is possible. So to with Go, we use specific values to signify an error._
 
-* Sentinel errors are one of the few variables that are declared at the package level.
+- Sentinel errors are one of the few variables that are declared at the package level.
 
-* By convention, their names start with Err (with the notable exception of io.EOF).
+- By convention, their names start with Err (with the notable exception of io.EOF).
 
-* They should be treated as read-only; there’s no way for the Go compiler to enforce this, but it is a programming error to change their value.
+- They should be treated as read-only; there’s no way for the Go compiler to enforce this, but it is a programming error to change their value.
 Sentinel errors are usually used to indicate that you cannot start or continue processing.
 
-* Be sure you need a sentinel error before you define one. Once you define one, it is part of your public API and you have committed to it being available in all future backward-compatible releases.
+- Be sure you need a sentinel error before you define one. Once you define one, it is part of your public API and you have committed to it being available in all future backward-compatible releases.
 
-* It’s far better to reuse one of the existing ones in the standard library or to define an error type that includes information about the condition that caused the error to be returned
+- It’s far better to reuse one of the existing ones in the standard library or to define an error type that includes information about the condition that caused the error to be returned
 
 ```go
 func main() {
@@ -524,27 +529,27 @@ If you are creating a library for third parties, do not let panics escape the bo
 
 ## Modules and Packages
 
-* The package name . places all the exported identifiers in the imported package into the current package’s namespace; you don’t need a prefix to refer to them.
+- The package name . places all the exported identifiers in the imported package into the current package’s namespace; you don’t need a prefix to refer to them.
 
-* Package names can be shadowed.
+- Package names can be shadowed.
 
 Whenever you run any go command that requires dependencies (such as go run, go build, go test, or even go list), any imports that aren’t already in go.mod are downloaded to a cache.
 
-* The go.mod file is automatically updated to include the module path that contains the package and the version of the module.
+- The go.mod file is automatically updated to include the module path that contains the package and the version of the module.
 
-* The go.sum file is updated with two entries: one with the module, its version, and a hash of the module, the other with the hash of the go.mod file for the module.
+- The go.sum file is updated with two entries: one with the module, its version, and a hash of the module, the other with the hash of the go.mod file for the module.
 
 ### Godoc
 
 The rules/conventions are:
 
-* Place the comment directly before the item being documented with no blank lines between the comment and the declaration of the item.
+- Place the comment directly before the item being documented with no blank lines between the comment and the declaration of the item.
 
-* Start the comment with two forward slashes (//) followed by the name of the item.
+- Start the comment with two forward slashes (//) followed by the name of the item.
 
-* Use a blank comment to break your comment into multiple paragraphs.
+- Use a blank comment to break your comment into multiple paragraphs.
 
-* Insert preformatted comments by indenting the lines.
+- Insert preformatted comments by indenting the lines.
 
 Comments before the package declaration create package-level comments. If you have lengthy comments for the package (such as the extensive formatting documentation in the fmt package), the convention is to put the comments in a file in your package called `doc.go`.
 
@@ -570,6 +575,6 @@ You should only declare a single init function per package, even though Go allow
 
 Go supports two ways for creating the different import paths:
 
-* Create a subdirectory within your module named vN, where N is the major version of your module. For example, if you are creating version 2 of your module, call this directory v2. Copy your code into this subdirectory, including the README and LICENSE files.
+- Create a subdirectory within your module named vN, where N is the major version of your module. For example, if you are creating version 2 of your module, call this directory v2. Copy your code into this subdirectory, including the README and LICENSE files.
 
-* Create a branch in your version control system. You can either put the old code on the branch or the new code. Name the branch vN if you are putting the new code on the branch, or vN-1 if you are putting the old code there. For example, if you are creating version 2 of your module and want to put version 1 code on the branch, name the branch v1.
+- Create a branch in your version control system. You can either put the old code on the branch or the new code. Name the branch vN if you are putting the new code on the branch, or vN-1 if you are putting the old code there. For example, if you are creating version 2 of your module and want to put version 1 code on the branch, name the branch v1.
