@@ -1,5 +1,7 @@
 # Kubernetes
 
+## Table of Contents
+
 - [Generally Helpful Info](#generally-helpful-info)
   - [Get top 10 beginning lines of a file](#get-top-10-beginning-lines-of-a-file)
   - [Streams tail end contents of a file](#streams-tail-end-contents-of-a-file)
