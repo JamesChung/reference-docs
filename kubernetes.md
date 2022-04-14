@@ -1,6 +1,8 @@
 # Kubernetes
 
 - [Generally Helpful Info](#generally-helpful-info)
+  - [Get top 10 beginning lines of a file](#get-top-10-beginning-lines-of-a-file)
+  - [Streams tail end contents of a file](#streams-tail-end-contents-of-a-file)
   - [Using an Alias for `kubectl`](#using-an-alias-for--kubectl-)
   - [Get API Resource Short Names](#get-api-resource-short-names)
 - [`config`](#-config-)
@@ -15,6 +17,11 @@
   - [Force kill/delete](#force-kill-delete)
 - [`get`](#-get-)
   - [Get YAML manifest of existing resource](#get-yaml-manifest-of-existing-resource)
+- [`logs`](#-logs-)
+  - [Get logs from a specific container](#get-logs-from-a-specific-container)
+  - [Get logs from previously ran container](#get-logs-from-previously-ran-container)
+  - [Stream logs](#stream-logs)
+  - [Aggregated logs from all containers with a specifc label](#aggregated-logs-from-all-containers-with-a-specifc-label)
 - [ConfigMap](#configmap)
   - [Creating a ConfigMap](#creating-a-configmap)
     - [*Create a new config map named my-config based on folder bar*](#-create-a-new-config-map-named-my-config-based-on-folder-bar-)
@@ -42,9 +49,17 @@
 - [Service Accounts](#service-accounts)
   - [Query for available Service Accounts](#query-for-available-service-accounts)
   - [Create a new Service Account](#create-a-new-service-account)
+- [Multi-Container Pods](#multi-container-pods)
+  - [A Pod defining an init Container](#a-pod-defining-an-init-container)
+  - [The Sidecar Pattern](#the-sidecar-pattern)
+    - [An exemplary sidecar pattern implementation](#an-exemplary-sidecar-pattern-implementation)
+  - [The Adapter Pattern](#the-adapter-pattern)
+    - [An exemplary adapter pattern implementation](#an-exemplary-adapter-pattern-implementation)
+  - [The Amassador Pattern](#the-amassador-pattern)
+    - [Node.js HTTP rate limiter implementation](#nodejs-http-rate-limiter-implementation)
+    - [An exemplary ambassador pattern implementation](#an-exemplary-ambassador-pattern-implementation)
 
 ## Generally Helpful Info
-
 
 ### Get top 10 beginning lines of a file
 
@@ -685,6 +700,8 @@ Typical responsibilities include retry logic upon a request failure, security co
 
 #### Node.js HTTP rate limiter implementation
 
+> For example, the requirements for the rate limiter could say that an application can only make a maximum of 5 calls every 15 minutes. Instead of strongly coupling the rate-limiting logic to the application code, it will be provided by an ambassador container. Any calls made from the business application need to be funneled through the ambassador container.
+
 ```javascript
 const express = require('express');
 const app = express();
@@ -743,4 +760,21 @@ spec:
     image: bmuschko/nodejs-ambassador:1.0.0
     ports:
     - containerPort: 8081
+```
+
+```sh
+$ kubectl create -f ambassador.yaml
+pod/rate-limiter created
+$ kubectl get pods rate-limiter
+NAME           READY   STATUS    RESTARTS   AGE
+rate-limiter   2/2     Running   0          5s
+$ kubectl exec rate-limiter -it -c business-app -- /bin/sh
+# curl localhost:8080/test
+{"args":{"test":"123"},"headers":{"x-forwarded-proto":"https", \
+"x-forwarded-port":"443","host":"postman-echo.com", \
+"x-amzn-trace-id":"Root=1-5f177dba-e736991e882d12fcffd23f34"}, \
+"url":"https://postman-echo.com/get?test=123"}
+...
+# curl localhost:8080/test
+Too many requests have been made from this IP, please try again after an hour
 ```
