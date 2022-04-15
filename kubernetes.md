@@ -3,27 +3,38 @@
 ## Table of Contents
 
 - [Generally Helpful Info](#generally-helpful-info)
-  - [Get top 10 beginning lines of a file](#get-top-10-beginning-lines-of-a-file)
-  - [Streams tail end contents of a file](#streams-tail-end-contents-of-a-file)
+  - [Get top 10 beginning lines](#get-top-10-beginning-lines)
+  - [Streams tail end contents](#streams-tail-end-contents)
   - [Using an Alias for `kubectl`](#using-an-alias-for--kubectl-)
   - [Get API Resource Short Names](#get-api-resource-short-names)
 - [`config`](#-config-)
   - [Setting a Context and Namespace](#setting-a-context-and-namespace)
+- [`top`](#-top-)
+  - [Check node/pod memory & CPU usage](#check-node-pod-memory---cpu-usage)
 - [`describe`](#-describe-)
   - [Listing of a series of events](#listing-of-a-series-of-events)
 - [`explain`](#-explain-)
 - [`create`](#-create-)
   - [Get help on creatable resources](#get-help-on-creatable-resources)
 - [`apply`](#-apply-)
+  - [Create resources from file](#create-resources-from-file)
 - [`delete`](#-delete-)
   - [Force kill/delete](#force-kill-delete)
+  - [Delete now](#delete-now)
 - [`get`](#-get-)
   - [Get YAML manifest of existing resource](#get-yaml-manifest-of-existing-resource)
+  - [Get all events for a given namespace](#get-all-events-for-a-given-namespace)
+  - [Get events for an individual resource](#get-events-for-an-individual-resource)
+  - [Get service endpoints](#get-service-endpoints)
+  - [Get specific service endpoints](#get-specific-service-endpoints)
+  - [Multiple resource types](#multiple-resource-types)
 - [`logs`](#-logs-)
   - [Get logs from a specific container](#get-logs-from-a-specific-container)
   - [Get logs from previously ran container](#get-logs-from-previously-ran-container)
   - [Stream logs](#stream-logs)
   - [Aggregated logs from all containers with a specifc label](#aggregated-logs-from-all-containers-with-a-specifc-label)
+- [`debug`](#-debug-)
+  - [Create debug ephemeral container](#create-debug-ephemeral-container)
 - [ConfigMap](#configmap)
   - [Creating a ConfigMap](#creating-a-configmap)
     - [*Create a new config map named my-config based on folder bar*](#-create-a-new-config-map-named-my-config-based-on-folder-bar-)
@@ -60,19 +71,32 @@
   - [The Amassador Pattern](#the-amassador-pattern)
     - [Node.js HTTP rate limiter implementation](#nodejs-http-rate-limiter-implementation)
     - [An exemplary ambassador pattern implementation](#an-exemplary-ambassador-pattern-implementation)
+- [Health Probes](#health-probes)
+  - [Readiness Probe](#readiness-probe)
+    - [A readiness probe that uses an HTTP GET request](#a-readiness-probe-that-uses-an-http-get-request)
+  - [Liveness Probe](#liveness-probe)
+    - [A liveness probe that uses a custom command](#a-liveness-probe-that-uses-a-custom-command)
+  - [Startup Probe](#startup-probe)
+    - [A startup probe that uses a TCP socket connection](#a-startup-probe-that-uses-a-tcp-socket-connection)
 
 ## Generally Helpful Info
 
-### Get top 10 beginning lines of a file
+### Get top 10 beginning lines
 
 ```sh
 head -n 10 [file]
 ```
 
-### Streams tail end contents of a file
+### Streams tail end contents
 
 ```sh
 tail -f [file]
+```
+
+> Last 5 lines
+
+```sh
+kubectl describe pod [pod] | tail -n 5
 ```
 
 ### Using an Alias for `kubectl`
@@ -99,6 +123,17 @@ persistentvolumeclaims  pvc                   true        PersistentVolumeClaim
 ```sh
 kubectl config set-context <context-of-question> \
   --namespace=<namespace-of-question>
+```
+
+## `top`
+
+> NOTE: [Metrics server](https://github.com/kubernetes-sigs/metrics-server) must be enabled to use `top`
+
+### Check node/pod memory & CPU usage
+
+```sh
+kubectl top nodes
+kubectl top pods
 ```
 
 ## `describe`
@@ -159,6 +194,14 @@ Options:
 
 ## `apply`
 
+> Stateful/Declarative approach compared to imperative `create` command unless the equivalent `kubectl create -f [file] --save-config` is ran.
+
+### Create resources from file
+
+```sh
+kubectl apply -f [file]
+```
+
 ## `delete`
 
 ### Force kill/delete
@@ -169,12 +212,53 @@ Options:
 kubectl delete [resource] [name] --grace-period=0 --force
 ```
 
+### Delete now
+
+```sh
+kubectl delete [resource] [name] --now
+```
+
 ## `get`
 
 ### Get YAML manifest of existing resource
 
 ```sh
 kubectl get [resource] [name] -o yaml > manifest.yaml
+```
+
+### Get all events for a given namespace
+
+```sh
+kubectl get events
+```
+
+### Get events for an individual resource
+
+```sh
+kubectl get events --field-selector=involvedObject.name=[object name]
+```
+
+### Get service endpoints
+
+```sh
+$ kubectl get endpoints
+NAME         ENDPOINTS           AGE
+kubernetes   192.168.65.4:6443   15d
+mylb         10.1.0.42:80        5m5s
+```
+
+### Get specific service endpoints
+
+```sh
+$ kubectl get endpoints myservice
+NAME        ENDPOINTS                     AGE
+myservice   172.17.0.5:80,172.17.0.6:80   9m31s
+```
+
+### Multiple resource types
+
+```sh
+kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default
 ```
 
 ## `logs`
@@ -202,6 +286,21 @@ kubectl logs [resource]/[pod] -f
 ```sh
 kubectl logs --selector=[label]
 kubectl logs --selector=app=my-app
+```
+
+## `debug`
+
+> NOTE: Ephemeral containers are still considered an experimental feature. The cluster has to enable the feature flag to work.
+
+- [Ephemeral Containers](https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/)
+- [Debugging with an ephemeral debug container](https://kubernetes.io/docs/tasks/debug-application-cluster/debug-running-pod/#ephemeral-container)
+
+### Create debug ephemeral container
+
+> If you specify the `-i`/`--interactive` argument, `kubectl` will automatically attach to the console of the Ephemeral Container.
+
+```sh
+kubectl debug [pod] -it --image=busybox
 ```
 
 ## ConfigMap
@@ -620,7 +719,7 @@ Common use cases:
 
 > The sidecars are not part of the main traffic or API of the primary application. They usually operate asynchronously and are not involved in the public API.
 
-![sidecar pattern](images/sidecar_pattern.png)
+![sidecar pattern](images/kubernetes/sidecar_pattern.png)
 
 #### An exemplary sidecar pattern implementation
 
@@ -653,7 +752,7 @@ spec:
 
 > The adapter pattern transforms the output produced by the application to make it consumable in the format needed by another part of the system.
 
-![adapter pattern](images/adapter_pattern.png)
+![adapter pattern](images/kubernetes/adapter_pattern.png)
 
 #### An exemplary adapter pattern implementation
 
@@ -698,7 +797,7 @@ The overarching goal is to hide and/or abstract the complexity of interacting wi
 
 Typical responsibilities include retry logic upon a request failure, security concerns like providing authentication or authorization, or monitoring latency or resource usage.
 
-![ambassador pattern](images/ambassador_pattern.png)
+![ambassador pattern](images/kubernetes/ambassador_pattern.png)
 
 #### Node.js HTTP rate limiter implementation
 
@@ -779,4 +878,110 @@ $ kubectl exec rate-limiter -it -c business-app -- /bin/sh
 ...
 # curl localhost:8080/test
 Too many requests have been made from this IP, please try again after an hour
+```
+
+## Health Probes
+
+Each probe offers three distinct methods to verify the health of a container. You can define one or many of the health verification methods for a container.
+
+| Method | Option | Description |
+| :-: | :-: | :- |
+|Custom command|`exec.command`|Executes a command inside of the container (e.g., a `cat` command) and checks its exit code. Kubernetes considers a zero exit code to be successful. A non-zero exit code indicates an error.|
+|HTTP GET request|`httpGet`|Sends an HTTP GET request to an endpoint exposed by the application. An HTTP response code in the range of 200 and 399 indicates success. Any other response code is regarded as an error.|
+|TCP socket connection|`tcpSocket`|Tries to open a TCP socket connection to a port. If the connection could be established, the probing attempt was successful. The inability to connect is accounted for as an error.|
+
+Every probe offers a set of attributes that can further configure the runtime behavior
+
+|Attribute|Default value|Description|
+| :-: | :-: | :- |
+|`initialDelaySeconds`|0|Delay in seconds until first check is executed.|
+|`periodSeconds`|10|Interval for executing a check (e.g., every 20 seconds).|
+|`timeoutSeconds`|1|Maximum number of seconds until check operation times out.|
+|`successThreshold`|1|Number of successful check attempts until probe is considered successful after a failure.|
+|`failureThreshold`|3|Number of failures for check attempts before probe is marked failed and takes action.|
+
+### Readiness Probe
+
+>Even after an application has been started up, it may still need to execute configuration procedures—for example, connecting to a database and preparing data. This probe checks if the application is ready to serve incoming requests.
+
+![readiness probe](images/kubernetes/readiness_probe.png)
+
+#### A readiness probe that uses an HTTP GET request
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-pod
+spec:
+  containers:
+  - image: bmuschko/nodejs-hello-world:1.0.0
+    name: hello-world
+    ports:
+    - name: nodejs-port
+      containerPort: 3000
+    readinessProbe:
+      httpGet:
+        path: /
+        port: nodejs-port
+      initialDelaySeconds: 2
+      periodSeconds: 8
+```
+
+### Liveness Probe
+
+> Once the application is running, we’ll want to make sure that it still works as expected without issues. This probe periodically checks for the application’s responsiveness. Kubernetes restarts the Pod automatically if the probe considers the application be in an unhealthy state.
+
+![liveness probe](images/kubernetes/liveness_probe.png)
+
+#### A liveness probe that uses a custom command
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-pod
+spec:
+  containers:
+  - image: busybox
+    name: app
+    args:
+    - /bin/sh
+    - -c
+    - 'while true; do touch /tmp/heartbeat.txt; sleep 5; done;'
+    livenessProbe:
+      exec:
+        command:
+        - test `find /tmp/heartbeat.txt -mmin -1`
+      initialDelaySeconds: 5
+      periodSeconds: 30
+```
+
+### Startup Probe
+
+> Legacy applications in particular can take a long time to start up—we’re talking minutes sometimes. This probe can be instantiated to wait for a predefined amount of time before a liveness probe is allowed to start probing. By setting up a startup probe, you can prevent overwhelming the application process with probing requests. Startup probes kill the container if the application couldn’t start within the set time frame.
+
+The kubelet puts the readiness and liveness probes on hold while the startup probe is running. A startup probe finishes its operation under one of the following conditions:
+
+- If it could verify that the application has been started.
+- If the application doesn't respond within the timeout period.
+
+![startup probe](images/kubernetes/startup_probe.png)
+
+#### A startup probe that uses a TCP socket connection
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: startup-pod
+spec:
+  containers:
+  - image: httpd:2.4.46
+    name: http-server
+    startupProbe:
+      tcpSocket:
+        port: 80
+      initialDelaySeconds: 3
+      periodSeconds: 15
 ```
