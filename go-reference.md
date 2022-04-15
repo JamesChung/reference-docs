@@ -4,38 +4,31 @@
 
 - [Commands](#commands)
 - [Basic Types](#basic-types)
-  - [String Types](https://golang.org/ref/spec#String_types)
-  - [Boolean Types](https://golang.org/ref/spec#Boolean_types)
-  - [Integer Types](https://golang.org/ref/spec#Numeric_types)
-    - [Unsigned Types](#unsigned-types)
-    - [Signed Types](#signed-types)
-  - [Floating Point Types](https://golang.org/ref/spec#Numeric_types)
-  - [Complex Types](https://golang.org/ref/spec#Numeric_types)
+  - [String Types](#string-types)
+  - [Boolean Types](#boolean-types)
+  - [Integer Types](#integer-types)
+  - [Floating Point Types](#floating-point-types)
+  - [Complex Types](#complex-types)
 - [Aggregate Types](#aggregate-types)
 - [Reference Types](#reference-types)
 - [Type Alias](#type-alias)
-- [Universe Block](https://golang.org/ref/spec#Predeclared_identifiers)
-- [Pointer Performance](https://github.com/learning-go-book/pointer_performance)
+- [Universe Block](#universe-block)
+- [Pointer Performance](#pointer-performance)
 - [Embedding](#embedding)
   - [Embedding Interfaces](#embedding-interfaces)
 - [Interfaces](#interfaces)
   - [Type Assertions](#type-assertions)
-    - [The comma ok Idiom:](#the-comma-ok-idiom-)
   - [Type Switches](#type-switches)
   - [Function Types](#function-types)
 - [Errors](#errors)
   - [Sentinel Errors](#sentinel-errors)
   - [Custom Errors](#custom-errors)
   - [Wrapping Errors](#wrapping-errors)
-    - [Unwrap](#unwrap)
-    - [Is and As](#is-and-as)
-      - [Is](#is)
-      - [As](#as)
   - [Recover](#recover)
 - [Modules and Packages](#modules-and-packages)
   - [Godoc](#godoc)
-  - [The `internal` Package](#the--internal--package)
-  - [The `init` Function](#the--init--function)
+  - [The `internal` Package](#the-internal-package)
+  - [The `init` Function](#the-init-function)
   - [Versioning](#versioning)
 
 ## Commands
@@ -48,41 +41,48 @@
 
 ## Basic Types
 
-### [String Types](https://golang.org/ref/spec#String_types)
+### String Types
+
+> <https://golang.org/ref/spec#String_types>
 
 - `string`
 - `rune`    (`int32`)
 
-### [Boolean Types](https://golang.org/ref/spec#Boolean_types)
+### Boolean Types
+
+> <https://golang.org/ref/spec#Boolean_types>
 
 - `true`
 - `false`
 
-### [Integer Types](https://golang.org/ref/spec#Numeric_types)
+### Integer Types
 
-#### Unsigned Types
+><https://golang.org/ref/spec#Numeric_types>
 
-- `uint`    (usually based on CPU arch)
-- `uint8`   (`byte`)
-- `uint16`
-- `uint32`
-- `uint64`
-- `uintptr` (usually based on CPU arch)
+- Unsigned Types
+  - `uint`    (usually based on CPU arch)
+  - `uint8`   (`byte`)
+  - `uint16`
+  - `uint32`
+  - `uint64`
+  - `uintptr` (usually based on CPU arch)
+- Signed Types
+  - `int`     (usually based on CPU arch)
+  - `int8`
+  - `int16`
+  - `int32`   (`rune`)
+  - `int64`
 
-#### Signed Types
+### Floating Point Types
 
-- `int`     (usually based on CPU arch)
-- `int8`
-- `int16`
-- `int32`   (`rune`)
-- `int64`
-
-### [Floating Point Types](https://golang.org/ref/spec#Numeric_types)
+> <https://golang.org/ref/spec#Numeric_types>
 
 - `float32`
 - `float64`
 
-### [Complex Types](https://golang.org/ref/spec#Numeric_types)
+### Complex Types
+
+> <https://golang.org/ref/spec#Numeric_types>
 
 - `complex64`
 - `complex128`
@@ -130,7 +130,9 @@ One important point to remember: an alias is just another name for a type. If yo
 
 ---
 
-## [Universe Block](https://golang.org/ref/spec#Predeclared_identifiers)
+## Universe Block
+
+> <https://golang.org/ref/spec#Predeclared_identifiers>
 
 ```text
 Types:
@@ -149,7 +151,9 @@ Functions:
  make new panic print println real recover
 ```
 
-## [Pointer Performance](https://github.com/learning-go-book/pointer_performance)
+## Pointer Performance
+
+> <https://github.com/learning-go-book/pointer_performance>
 
 If a struct is large enough, there are performance improvements from using a pointer to the struct as either an input parameter or a return value. The time to pass a pointer into a function is constant for all data sizes, roughly one nanosecond. This makes sense, as the size of a pointer is the same for all data types. Passing a value into a function takes longer as the data gets larger. It takes about a millisecond once the value gets to be around 10 megabytes of data.
 
