@@ -29,3 +29,11 @@ tail -f [file]
 ```sh
 tail -F [file]
 ```
+
+## `grep`
+
+### Get line which contains search characters and `n` lines associated with search line
+
+```sh
+grep -C [int] [search]
+```
