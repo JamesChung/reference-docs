@@ -14,6 +14,8 @@
 - [`describe`](#describe)
   - [Listing of a series of events](#listing-of-a-series-of-events)
 - [`explain`](#explain)
+- [Explain a resource](#explain-a-resource)
+  - [`grep` API documentation sections with a buffer of `n` containing "Probe"](#grep-api-documentation-sections-with-a-buffer-of-n-containing-probe)
 - [`create`](#create)
   - [Get help on creatable resources](#get-help-on-creatable-resources)
 - [`apply`](#apply)
@@ -28,11 +30,27 @@
   - [Get service endpoints](#get-service-endpoints)
   - [Get specific service endpoints](#get-specific-service-endpoints)
   - [Multiple resource types](#multiple-resource-types)
+- [`set`](#set)
+- [`label`](#label)
+  - [Label Selection from the Command Line](#label-selection-from-the-command-line)
+- [`annotate`](#annotate)
+- [`rollout`](#rollout)
+  - [Get detailed information about a revision](#get-detailed-information-about-a-revision)
+  - [Rolling back to a previous revision](#rolling-back-to-a-previous-revision)
+- [`scale`](#scale)
+- [`autoscale`](#autoscale)
+  - [Create a Horizontal Pod Autoscaler](#create-a-horizontal-pod-autoscaler)
+- [`attach`](#attach)
+  - [Get output from running pod](#get-output-from-running-pod)
+  - [Get output from specific container in a pod](#get-output-from-specific-container-in-a-pod)
+  - [Get output from the first pod of a replica set named nginx](#get-output-from-the-first-pod-of-a-replica-set-named-nginx)
 - [`logs`](#logs)
   - [Get logs from a specific container](#get-logs-from-a-specific-container)
   - [Get logs from previously ran container](#get-logs-from-previously-ran-container)
   - [Stream logs](#stream-logs)
   - [Aggregated logs from all containers with a specifc label](#aggregated-logs-from-all-containers-with-a-specifc-label)
+- [`expose`](#expose)
+  - [Create yaml service manifest](#create-yaml-service-manifest)
 - [`debug`](#debug)
   - [Create debug ephemeral container](#create-debug-ephemeral-container)
 - [ConfigMap](#configmap)
@@ -63,6 +81,32 @@
   - [Readiness Probe](#readiness-probe)
   - [Liveness Probe](#liveness-probe)
   - [Startup Probe](#startup-probe)
+- [Jobs](#jobs)
+  - [Restarting the Container on Failure](#restarting-the-container-on-failure)
+  - [Starting a New Pod on Failure](#starting-a-new-pod-on-failure)
+- [CronJobs](#cronjobs)
+  - [Create CronJob](#create-cronjob)
+  - [A CronJob printing the current date](#a-cronjob-printing-the-current-date)
+- [Services & Networking](#services--networking)
+  - [Service Types](#service-types)
+  - [Creating Services](#creating-services)
+  - [Port Mapping](#port-mapping)
+  - [Accessing a Service with Type ClusterIP](#accessing-a-service-with-type-clusterip)
+  - [Accessing a Service with Type NodePort](#accessing-a-service-with-type-nodeport)
+  - [Deployments and Services](#deployments-and-services)
+  - [Understanding Network Policies](#understanding-network-policies)
+  - [Creating Network Policies](#creating-network-policies)
+  - [Isolating All Pods in a Namespace](#isolating-all-pods-in-a-namespace)
+  - [Restrict Acces to Ports](#restrict-acces-to-ports)
+- [State Persistence](#state-persistence)
+  - [Understanding Volumes](#understanding-volumes)
+  - [Volume Types](#volume-types)
+  - [Creating and Accessing Volumes](#creating-and-accessing-volumes)
+  - [Understanding Persistent Volumes](#understanding-persistent-volumes)
+  - [Static Versus Dynamic Provisioning](#static-versus-dynamic-provisioning)
+  - [Creating PersistentVolumes](#creating-persistentvolumes)
+  - [Creating PersistentVolumeClaims](#creating-persistentvolumeclaims)
+  - [Mounting PersistentVolumeClaims in a Pod](#mounting-persistentvolumeclaims-in-a-pod)
 
 ## Generally Helpful Info
 
@@ -143,6 +187,8 @@ Warning  Failed     0s (x3 over 14s) kubelet, minikube  Error: container has \
 
 ## `explain`
 
+## Explain a resource
+
 ```sh
 $ kubectl explain pods.spec
 KIND:     Pod
@@ -155,6 +201,45 @@ DESCRIPTION:
 
 FIELDS:
   ...
+```
+
+### `grep` API documentation sections with a buffer of `n` containing "Probe"
+
+```sh
+$ kubectl explain pods.spec.containers | grep -C 4 Probe
+   lifecycle <Object>
+     Actions that the management system should take in response to container
+     lifecycle events. Cannot be updated.
+
+   livenessProbe <Object>
+     Periodic probe of container liveness. Container will be restarted if the
+     probe fails. Cannot be updated. More info:
+     https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+
+--
+     prevent that port from being exposed. Any port which is listening on the
+     default "0.0.0.0" address inside a container will be accessible from the
+     network. Cannot be updated.
+
+   readinessProbe <Object>
+     Periodic probe of container service readiness. Container will be removed
+     from service endpoints if the probe fails. Cannot be updated. More info:
+     https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+
+--
+     with. If set, the fields of SecurityContext override the equivalent fields
+     of PodSecurityContext. More info:
+     https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+
+   startupProbe <Object>
+     StartupProbe indicates that the Pod has successfully initialized. If
+     specified, no other probes are executed until this completes successfully.
+     If this probe fails, the Pod will be restarted, just as if the
+     livenessProbe failed. This can be used to provide different probe
+     parameters at the beginning of a Pod's lifecycle, when it might take a long
+     time to load data or warm a cache, than during steady-state operation. This
+     cannot be updated. More info:
+     https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 ```
 
 ## `create`
@@ -246,6 +331,185 @@ myservice   172.17.0.5:80,172.17.0.6:80   9m31s
 kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default
 ```
 
+## `set`
+
+- `env`             -- Update environment variables on a pod template
+  - `kubectl set env [resource] [name] [key]=[value]`
+- `image`           -- Update the image of a pod template
+  - `kubectl set image [resource] [name] [container name]=[image name]`
+  - example: `kubectl set image deployment my-deploy nginx=nginx:1.19.2`
+- `resources`       -- Update resource requests/limits on objects with pod templates
+- `selector`        -- Set the selector on a resource
+- `serviceaccount`  -- Update the service account of a resource
+- `subject`         -- Update the user, group, or service account in a role binding or cluster role binding
+
+## `label`
+
+```sh
+$ kubectl label pod labeled-pod region=eu
+pod/labeled-pod labeled
+$ kubectl get pod labeled-pod --show-labels
+NAME          READY   STATUS    RESTARTS   AGE   LABELS
+labeled-pod   1/1     Running   0          22h   env=dev,region=eu,tier=backend
+$ kubectl label pod labeled-pod region=us --overwrite
+pod/labeled-pod labeled
+$ kubectl get pod labeled-pod --show-labels
+NAME          READY   STATUS    RESTARTS   AGE   LABELS
+labeled-pod   1/1     Running   0          22h   env=dev,region=us,tier=backend
+$ kubectl label pod labeled-pod region-
+pod/labeled-pod labeled
+$ kubectl get pod labeled-pod --show-labels
+NAME          READY   STATUS    RESTARTS   AGE   LABELS
+labeled-pod   1/1     Running   0          22h   env=dev,tier=backend
+```
+
+### Label Selection from the Command Line
+
+> An equality-based requirement can use the operators`=`, `==`, or `!=`.
+
+> A set-based requirement can filter objects based on a set of values using the operators `in`, `notin`, and `exists`.
+
+```sh
+$ kubectl get pods -l env=prod --show-labels
+NAME       READY   STATUS    RESTARTS   AGE   LABELS
+backend    1/1     Running   0          37s   app=v1.2.4,env=prod,team=legacy
+database   1/1     Running   0          32s   env=prod,team=storage
+frontend   1/1     Running   0          42s   env=prod,team=shiny
+```
+
+> Get pods where label team is qual to shiny OR legacy
+
+```sh
+$ kubectl get pods -l 'team in (shiny, legacy)' --show-labels
+NAME       READY   STATUS    RESTARTS   AGE   LABELS
+backend    1/1     Running   0          19m   app=v1.2.4,env=prod,team=legacy
+frontend   1/1     Running   0          20m   env=prod,team=shiny
+```
+
+> Get pods where label team is equal to shiny OR legacy AND app is equal to v1.2.4
+
+```sh
+$ kubectl get pods -l 'team in (shiny, legacy)',app=v1.2.4 --show-labels
+NAME      READY   STATUS    RESTARTS   AGE   LABELS
+backend   1/1     Running   0          29m   app=v1.2.4,env=prod,team=legacy
+```
+
+## `annotate`
+
+> The `annotate` command is the counterpart of the `label` command but for annotations.
+
+```sh
+$ kubectl annotate pod annotated-pod oncall='800-555-1212'
+pod/annotated-pod annotated
+$ kubectl annotate pod annotated-pod oncall='800-555-2000' --overwrite
+pod/annotated-pod annotated
+$ kubectl annotate pod annotated-pod oncall-
+pod/annotated-pod annotated
+```
+
+## `rollout`
+
+- `history`  -- View rollout history
+- `pause`    -- Mark the provided resource as paused
+- `restart`  -- Restart a resource
+- `resume`   -- Resume a paused resource
+- `status`   -- Show the status of the rollout
+- `undo`     -- Undo a previous rollout
+
+> Every Deployment keeps a record of the rollout history. By default, a Deployment persists a maximum of 10 revisions in its history. You can change the limit by assigning a different value to spec.revisionHistoryLimit.
+
+### Get detailed information about a revision
+
+```sh
+$ kubectl rollout history deployments my-deploy --revision=2
+deployment.apps/my-deploy with revision #2
+Pod Template:
+  Labels: app=my-deploy
+ pod-template-hash=9df7d9c6
+  Containers:
+   nginx:
+    Image: nginx:1.19.2
+    Port: <none>
+    Host Port: <none>
+    Environment: <none>
+    Mounts: <none>
+  Volumes: <none>
+```
+
+### Rolling back to a previous revision
+
+```sh
+$ kubectl rollout undo deployment my-deploy --to-revision=1
+deployment.apps/my-deploy rolled back
+```
+
+## `scale`
+
+> Set a new size for a deployment, replica set, or a replication controller
+
+```sh
+$ kubectl scale deployment my-deploy --replicas=5
+deployment.apps/my-deploy scaled
+$ kubectl get pods
+NAME                         READY   STATUS              RESTARTS   AGE
+my-deploy-8448c488b5-5f5tg   0/1     ContainerCreating   0          4s
+my-deploy-8448c488b5-9xplx   0/1     ContainerCreating   0          4s
+my-deploy-8448c488b5-d8q4t   0/1     ContainerCreating   0          4s
+my-deploy-8448c488b5-f5kkm   0/1     ContainerCreating   0          4s
+my-deploy-8448c488b5-mzx5g   1/1     Running             0          3d19h
+$ kubectl get pods
+NAME                         READY   STATUS    RESTARTS   AGE
+my-deploy-8448c488b5-5f5tg   1/1     Running   0          44s
+my-deploy-8448c488b5-9xplx   1/1     Running   0          44s
+my-deploy-8448c488b5-d8q4t   1/1     Running   0          44s
+my-deploy-8448c488b5-f5kkm   1/1     Running   0          44s
+my-deploy-8448c488b5-mzx5g   1/1     Running   0          3d19h
+$ kubectl get replicasets
+NAME                   DESIRED   CURRENT   READY   AGE
+my-deploy-8448c488b5   5         5         5       3d19h
+```
+
+## `autoscale`
+
+> NOTE: [Metrics server](https://github.com/kubernetes-sigs/metrics-server) must be enabled for scaling to work properly.
+
+### Create a Horizontal Pod Autoscaler
+
+```sh
+$ kubectl autoscale deployment my-deploy --cpu-percent=70 --min=2 --max=8
+horizontalpodautoscaler.autoscaling/my-deploy autoscaled
+$ kubectl get hpa
+NAME        REFERENCE             TARGETS        MINPODS  MAXPODS REPLICAS  AGE
+my-deploy   Deployment/my-deploy  <unknown>/70%  2        8       2         37s
+```
+
+## `attach`
+
+### Get output from running pod
+
+```sh
+# Get output from running pod mypod; use the 'kubectl.kubernetes.io/default-container' annotation
+# for selecting the container to be attached or the first container in the pod will be chosen
+kubectl attach mypod
+```
+
+### Get output from specific container in a pod
+
+```sh
+# Get output from ruby-container from pod mypod
+kubectl attach mypod -c ruby-container
+
+# Switch to raw terminal mode; sends stdin to 'bash' in ruby-container from pod mypod
+# and sends stdout/stderr from 'bash' back to the client
+kubectl attach mypod -c ruby-container -i -t
+```
+
+### Get output from the first pod of a replica set named nginx
+
+```sh
+kubectl attach rs/nginx
+```
+
 ## `logs`
 
 ### Get logs from a specific container
@@ -271,6 +535,24 @@ kubectl logs [resource]/[pod] -f
 ```sh
 kubectl logs --selector=[label]
 kubectl logs --selector=app=my-app
+```
+
+## `expose`
+
+The `expose` command and the `--expose` command-line option are welcome shortcuts as a means to creating a new Service with a fast turnaround time.
+
+> For an existing Deployment, you can expose the underlying Pods with a Service using the expose deployment command:
+
+```sh
+$ kubectl expose deployment my-deploy --port=80 --target-port=80
+service/my-deploy exposed
+```
+
+### Create yaml service manifest
+
+```sh
+kubectl expose pod my-pod --name=my-service --port=8080 --target-port=80 \
+  --selector=app=web,tier=backend -o yaml --dry-run=client > my-service.yaml
 ```
 
 ## `debug`
@@ -661,6 +943,8 @@ spec:
 
 ## Multi-Container Pods
 
+> The default restart policy of a Pod is Always, which tells the Kubernetes scheduler to always restart the Pod even if the container exits with a zero exit code.
+
 ### A Pod defining an init Container
 
 > If an init container produces an error, the whole Pod is restarted, causing all init containers to run again in sequential order. For init containers, Kubernetes provides a separate section: spec.initContainers. Init containers are always executed before the main application containers, regardless of the definition order in the manifest.
@@ -969,4 +1253,479 @@ spec:
         port: 80
       initialDelaySeconds: 3
       periodSeconds: 15
+```
+
+## Jobs
+
+> The `spec.backoffLimit` attribute determines the number of retries a Job attempts to successfully complete the workload until the executed command finishes with an exit code 0. The default is 6, which means it will execute the workload 6 times before the Job is considered unsuccessful.
+
+### Restarting the Container on Failure
+
+> `OnFailure`: Upon a container failure, this policy will simply rerun the container.
+
+![on failure](images/kubernetes/on_failure.png)
+
+### Starting a New Pod on Failure
+
+> `Never`: This policy does not restart the container upon a failure. It starts a new Pod instead.
+
+![never](images/kubernetes/never.png)
+
+## CronJobs
+
+> A CronJob is essentially a Job, but it’s run periodically based a schedule; however, it will continue to create a new Pod when it’s time to run the task. The schedule can be defined with a cron-expression you may already know from Unix cron jobs.
+
+![cron job](images/kubernetes/cron_job.png)
+
+> By default, a CronJob retains the last three successful Pods and the last failed Pod
+
+```sh
+$ kubectl get cronjobs current-date -o yaml | grep successfulJobsHistoryLimit:
+  successfulJobsHistoryLimit: 3
+$ kubectl get cronjobs current-date -o yaml | grep failedJobsHistoryLimit:
+  failedJobsHistoryLimit: 1
+```
+
+### Create CronJob
+
+```sh
+$ kubectl create cronjob current-date --schedule="* * * * *" --image=nginx \
+  -- /bin/sh -c 'echo "Current date: $(date)"'
+cronjob.batch/current-date created
+```
+
+### A CronJob printing the current date
+
+```yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: current-date
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: current-date
+            image: nginx
+            args:
+            - /bin/sh
+            - -c
+            - 'echo "Current date: $(date)"'
+          restartPolicy: OnFailure
+```
+## Services & Networking
+
+### Service Types
+
+| Type | Description |
+| :-: | :- |
+|`ClusterIP`|Exposes the Service on a cluster-internal IP. Only reachable from within the cluster.|
+|`NodePort`|Exposes the Service on each node's IP address at a static port. Accessible from outside of the cluster.|
+|`LoadBalancer`|Exposes the Service externally using a cloud provider's load balancer.|
+|`ExternalName`|Maps a Service to a DNS name|
+
+### Creating Services
+
+#### Creating a service imperatively
+
+```sh
+# kubectl create service [type] [name] [options]
+$ kubectl create service clusterip nginx-service --tcp=80:80
+service/nginx-service created
+```
+
+#### `--expose` command line option
+
+> Instead of creating a Service as a standalone object, you can also expose a Pod or Deployment with a single command. The run command provides an optional --expose command-line option, which creates a new Pod and a corresponding Service with the correct label selection in place:
+
+```sh
+$ kubectl run nginx --image=nginx --restart=Never --port=80 --expose
+service/nginx created
+pod/nginx created
+```
+
+```sh
+$ kubectl expose deployment my-deploy --port=80 --target-port=80
+service/my-deploy exposed
+```
+
+### Port Mapping
+
+The correct port mapping determines if the incoming traffic actually reaches the application running inside of the Pods that match the label selection criteria of the Service. A Service always defines two different ports: the incoming port accepting traffic and the outgoing port, also called the target port.
+
+> The figure below shows a Service that accepts incoming traffic on port 3000. That’s the port defined by the attribute ports.port in the manifest. Any incoming traffic is then routed toward the target port, represented by ports.targetPort. The target port is the same port as defined by the container running inside of the label-selected Pod. In this case, that’s port 80.
+
+![port mapping](images/kubernetes/port_mapping.png)
+
+### Accessing a Service with Type ClusterIP
+
+`ClusterIP` is the default type of Service. It exposes the Service on a cluster-internal IP address. Figure below shows how to reach a Pod exposed by the `ClusterIP` type from another Pod from within the cluster. You can also create a proxy from outside of the cluster using the `kubectl proxy` command.
+
+![access proxy](images/kubernetes/access_proxy.png)
+
+```sh
+$ kubectl run nginx --image=nginx --restart=Never --port=80 --expose
+service/nginx created
+pod/nginx created
+$ kubectl get pod,service
+NAME        READY   STATUS    RESTARTS   AGE
+pod/nginx   1/1     Running   0          26s
+
+NAME            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/nginx   ClusterIP   10.96.225.204   <none>        80/TCP    26s
+```
+
+Remember that the Service of type ClusterIP can only be reached from within the cluster. To demonstrate the behavior, we’ll create a new Pod running in the same cluster and execute a wget command to access the application. Have a look at the cluster IP exposed by the Service—that’s 10.96.225.204. The port is 80. Combined as a single command, you can resolve the application via wget -O- 10.96.225.204:80 from the temporary Pod:
+
+```sh
+$ kubectl run busybox --image=busybox --restart=Never -it -- /bin/sh
+Connecting to 10.96.225.204:80 (10.96.225.204:80)
+writing to stdout
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and \
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+-                    100% |************************************************ \
+**********************|   612  0:00:00 ETA
+written to stdout
+/ # exit
+```
+
+The `proxy` command can establish a direct connection to the Kubernetes API server from your localhost. With the following command, we are opening port 9999 on which to run the proxy:
+
+```sh
+$ kubectl proxy --port=9999
+Starting to serve on 127.0.0.1:9999
+```
+
+Say you have the curl command-line tool installed on your machine to make a call to an endpoint of the API server. The following example uses localhost:9999—that’s the proxy entry point. As part of the URL, you’re providing the endpoint to the Service named nginx running in the default namespace according to the [API reference](https://kubernetes.io/docs/reference/using-api/):
+
+```sh
+$ curl -L localhost:9999/api/v1/namespaces/default/services/nginx/proxy
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and \
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
+
+### Accessing a Service with Type NodePort
+
+Declaring a Service with type NodePort exposes access through the node’s IP address and can be resolved from outside of the Kubernetes cluster. The node’s IP address can be reached in combination with a port number in the range of 30000 and 32767, assigned automatically upon the creation of the Service.
+
+![nodeport](images/kubernetes/nodeport.png)
+
+### Deployments and Services
+
+> A Deployment manages Pods and their replication. A Service routes network requests to a set of Pods. Both primitives use label selection to connect with an associated set of Pods.
+
+![relationship between a Deployment and Service](images/kubernetes/deploy_and_services.png)
+
+### Understanding Network Policies
+
+Within a Kubernetes cluster, any Pod can talk to any other Pod without restrictions using its [IP address or DNS name](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pods), even across namespaces. Not only does unrestricted inter-Pod communication pose a potential security risk, it also makes it harder to understand the mental communication model of your architecture. For example, there’s no good reason to allow a backend application running in a Pod to directly talk to the frontend application running in another Pod. The communication should be directed from the frontend Pod to the backend Pod. A network policy defines the rules that control traffic from and to a Pod.
+
+![network policy](images/kubernetes/network_policy.png)
+
+#### Configuration elements of a network policy
+
+| Attribute | Description |
+| :-: | :- |
+|`podSelector`|Selects the Pods in the namespace to apply the network policy to.|
+|`policyTypes`|Defines the type of traffic (i.e., ingress and/or egress) the network policy applies to.|
+|`ingress`|Lists the rules for incoming traffic. Each rule can define `from` and `ports` sections.|
+|`egress`|Lists the rules for outgoing traffic. Each rule can define `to` and `ports` sections.|
+
+### Creating Network Policies
+
+> You cannot create a new network policy with the imperative `create` command.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-processor
+      role: api
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: coffeeshop
+```
+
+> NOTE: Without a network policy controller, network policies won’t have any effect. You need to configure a network overlay solution that provides this controller. Without adhering to the proper prerequisites, network policies won’t have any effect. You can find guidance on a [dedicated page](https://kubernetes.io/docs/tasks/administer-cluster/network-policy-provider/cilium-network-policy/) in the Kubernetes documentation.
+
+### Isolating All Pods in a Namespace
+
+It’s best practice to start with a “deny all traffic” rule to minimize the attack vector. From there, you can open access as needed.
+
+#### Disallowing all traffic with the default policy
+
+> The curly braces for `spec.podSelector` mean “apply to all Pods in the namespace.” The attribute `spec.policyTypes` defines the types of traffic the rule should apply to.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+```
+
+### Restrict Acces to Ports
+
+If not specified by a network policy, all ports are accessible. There are good reasons why you may want to restrict access on the port level as well. Say you’re running an application in a Pod that only exposes port 8080 to the outside. While convenient during development, it widens the attack vector on any other port that’s not relevant to the application. Port rules can be specified for ingress and egress as part of a network policy.
+
+#### Definition of a network policy allowing ingress access on port 8080
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: port-allow
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - protocol: TCP
+      port: 8080
+```
+
+## State Persistence
+
+- Volume
+- Persistent Volume
+- Persistent Volume Claim
+
+Each container running in a Pod provides a temporary filesystem. Applications running in the container can read from it and write to it. A container’s temporary filesystem is isolated from any other container or Pod and is not persisted beyond a Pod restart.
+
+A Volume is a Kubernetes capability that persists data beyond a Pod/container restart. Essentially, a Volume is a directory that’s shareable between multiple containers of a Pod.
+
+Persistent Volumes are a specific category of the wider concept of Volumes. The mechanics for Persistent Volumes are slightly more complex. The Persistent Volume is the resource that actually persists the data to an underlying physical storage. The Persistent Volume Claim represents the connecting resource between a Pod and a Persistent Volume responsible for requesting the storage. Finally, the Pod needs to claim the Persistent Volume and mount it to a directory path available to the containers running inside of the Pod.
+
+### Understanding Volumes
+
+Applications running in a container can use the temporary filesystem to read and write files. In case of a container crash or a cluster/node restart, the kubelet will restart the container. Any data that had been written to the temporary filesystem is lost and cannot be retrieved anymore. The container effectively starts with a clean slate again.
+
+![A container using the temporary filesystem versus a Volume](images/kubernetes/tmpfs_vs_volume.png)
+
+### Volume Types
+
+Every Volume needs to define a type. The type determines the medium that backs the Volume and its runtime behavior. The Kubernetes documentation offers a long list of Volume types. Some of the types—for example, `azureDisk`, `awsElasticBlockStore`, or `gcePersistentDisk`—are only available when running the Kubernetes cluster in a specific cloud provider.
+
+| Type | Description |
+| :-: | :- |
+|`emptyDir`|Empty directory in Pod with read/write access. Only persisted for the lifespan of a Pod. A good choice for cache implementations for data exchange between containers of a Pod.|
+|`hostPath`|File or directory from the host node's filesystem.|
+|`configMap`, `secret`|Provides a way to inject configuration data.|
+|`nfs`|An existing NFS (Network File System) share. Preserves data after Pod restart.|
+|`persistentVolumeClaim`|Claims a Persistent Volume.|
+
+### Creating and Accessing Volumes
+
+Defining a Volume for a Pod requires two steps. First, you need to declare the Volume itself using the attribute `spec.volumes`. As part of the definition, you provide the name and the type. Just declaring the Volume won’t be sufficient, though. Second, the Volume needs to be mounted to a path of the consuming container via `spec.containers.volumeMounts`. The mapping between the Volume and the Volume mount occurs by the matching name.
+
+#### A Pod defining and mounting a Volume
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: business-app
+spec:
+  volumes:
+  - name: logs-volume
+    emptyDir: {}
+  containers:
+  - image: nginx
+    name: nginx
+    volumeMounts:
+    - mountPath: /var/logs
+      name: logs-volume
+```
+
+### Understanding Persistent Volumes
+
+Data persistence ensures the lifecycles of the data are decoupled from the lifecycles of the cluster resources. A typical example would be data persisted by a database. That’s the responsibility of a Persistent Volume. Kubernetes models persist data with the help of two primitives: the PersistentVolume and the PersistentVolumeClaim.
+
+The *PersistentVolume* is the storage device in a Kubernetes cluster. The PersistentVolume is completely decoupled from the Pod and therefore has its own lifecycle. The object captures the source of the storage (e.g., storage made available by a cloud provider). A PersistentVolume is either provided by a Kubernetes administrator or assigned dynamically by mapping to a storage class.
+
+The *PersistentVolumeClaim* requests the resources of a PersistentVolume—for example, the size of the storage and the access type. In the Pod, you will use the type `persistentVolumeClaim` to mount the abstracted PersistentVolume by using the PersistentVolumeClaim.
+
+### Static Versus Dynamic Provisioning
+
+A PersistentVolume can be created statically or dynamically.
+
+- If you go with the static approach, then you need to create storage device first and reference it by explicitly creating an object of kind PersistentVolume.
+- The dynamic approach doesn’t require you to create a PersistentVolume object. It will be automatically created from the PersistentVolumeClaim by setting a storage class name using the attribute `spec.storageClassName`.
+
+A storage class is an abstraction concept that defines a class of storage device (e.g., storage with slow or fast performance) used for different application types. It’s usually the job of a Kubernetes administrator to set up storage classes.
+
+> Minikube already creates a default storage class named standard, which you can query with the following command:
+
+```sh
+$ kubectl get storageclass
+NAME                PROVISIONER               RECLAIMPOLICY    VOLUMEBINDINGMODE \
+  ALLOWVOLUMEEXPANSION   AGE
+standard (default)  k8s.io/minikube-hostpath  Delete           Immediate \
+  false                  108d
+```
+
+### Creating PersistentVolumes
+
+> NOTE: A PersistentVolume can only be created using the mainfest-first approach.
+
+Every PersistentVolume needs to define the storage capacity using `spec.capacity` and an access mode set via `spec.accessModes`.
+
+#### PersistentVolume access modes
+
+| Type | Description |
+| :-: | :- |
+|`ReadWriteOnce`|Read/Write access by a single node.|
+|`ReadOnlyMany`|Read-only access by many nodes.|
+|`ReadWriteMany`|Read/Write access by many nodes.|
+
+#### YAML manifest defining a PersistentVolume
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: db-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/db
+```
+
+### Creating PersistentVolumeClaims
+
+#### Definition of a PersistentVolumeClaim
+
+```yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 512m
+```
+
+> Using the `describe` command is a good way to verify if the PersistentVolumeClaim was mounted properly
+
+```sh
+$ kubectl describe pvc db-pvc
+...
+Mounted By:    <none>
+...
+```
+
+### Mounting PersistentVolumeClaims in a Pod
+
+#### A Pod referencing a PersistentVolumeClaim
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-consuming-pvc
+spec:
+  volumes:
+    - name: app-storage
+      persistentVolumeClaim:
+        claimName: db-pvc
+  containers:
+  - image: alpine
+    name: app
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do sleep 60; done;"]
+    volumeMounts:
+      - mountPath: "/mnt/data"
+        name: app-storage
+```
+
+```sh
+$ kubectl create -f app-consuming-pvc.yaml
+pod/app-consuming-pvc created
+$ kubectl get pods
+NAME                READY   STATUS    RESTARTS   AGE
+app-consuming-pvc   1/1     Running   0          3s
+$ kubectl describe pod app-consuming-pvc
+...
+Volumes:
+  app-storage:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim \
+                in the same namespace)
+    ClaimName:  db-pvc
+    ReadOnly:   false
+...
+
+$ kubectl describe pvc db-pvc
+...
+Mounted By:    app-consuming-pvc
+...
 ```
