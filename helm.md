@@ -153,6 +153,48 @@ helm uninstall mysite --namespace=first
 helm uninstall --keep-history
 ```
 
+## `template`
+
+- During `helm template`, Helm *never* contacts a remote Kubernetes server.
+- The `template` command always acts like an installation.
+- Template functions and directives that would normally require contacting a Kubernetes server will instead only return default data.
+- The chart only has access to default Kubernetes kinds.
+
+When Helm is compiled, it is compiled against a particular version of Kubernetes. The Kubernetes libraries contain the list of built-in kinds for that release. Helm uses that built-in list instead of a list it fetches from the API server. For this reason, Helm does not have access to any CRDs during a `helm template` run, since CRDs are installed on the cluster and are not included in the Kubernetes libraries.
+
+> NOTE: Running an old version of Helm against a chart that uses new kinds or versions can produce an error during `helm template` because Helm will not have the newest kinds or versions compiled into it.
+
+Because Helm does not contact a Kubernetes cluster during a helm template run, it does not do complete validation of the output. It is possible that Helm will not catch some errors in this case. You may choose to use the --validate flag if you want that behavior, but in this case Helm will need a valid kubeconfig file with credentials for a cluster.
+
+```sh
+$ helm template mysite bitnami/drupal --values values.yaml --set \
+drupalEmail=foo@example.com
+ ---
+# Source: drupal/charts/mariadb/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysite-mariadb
+  labels:
+    app: "mariadb"
+    chart: "mariadb-7.5.1"
+    release: "mysite"
+    heritage: "Helm"
+type: Opaque
+# ... LOTS removed from here
+  volumes:
+    - name: tests
+      configMap:
+        name: mysite-mariadb-tests
+    - name: tools
+      emptyDir: {}
+  restartPolicy: Never
+```
+
+### Using a post-render instead of helm template
+
+Sometimes you want to intercept the YAML, modify it with your own tool, and then load it into Kubernetes. Helm provides a way to execute this external tool without having to resort to using `helm template`. The flag `--post-renderer` on the `install`, `upgrade`, `rollback`, and `template` will cause Helm to send the YAML data to the command, and then read the results back into Helm. This is a great way to work with tools like Kustomize.
+
 ## Configuration at Install Time
 
 There are several ways of telling Helm which values you want to be configured. The best way is to create a YAML file with all of the configuration overrides.
