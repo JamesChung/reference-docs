@@ -4,6 +4,7 @@
 
 - Containers & Orchestration
   - [kubernetes](./kubernetes.md)
+  - [helm](./helm.md)
 - Programming Languages
   - [golang](./golang.md)
   - [rust](./rust.md)
