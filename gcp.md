@@ -114,8 +114,8 @@ Service Accounts control server-to-serer interactions
 
 - Base URLs
   - The full URL:
-    - http://metadata.google.internal/computeMetadata/v1/
+    - `http://metadata.google.internal/computeMetadata/v1/`
   - The short URL is:
-    - http://metadata/computeMetadata/v1/
+    - `http://metadata/computeMetadata/v1/`
   - IP address:
-    - http://169.254.169.254/computeMetadata/v1/
+    - `http://169.254.169.254/computeMetadata/v1/`
