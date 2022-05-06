@@ -31,6 +31,14 @@ But all is not lost. A few years ago, David Tolnay (the author of serde, among a
 
 By doing this, you’re ensuring that there is in fact only a single type T across both major versions. This, in turn, means that any crate that depends on 1.0 will be able to use a T from 2.0, and vice versa. And because this happens only for types you explicitly opt into with this trick, changes that were in fact breaking will continue to be.
 
+## The Never Type
+
+Some functions, like those that start a continuously running server loop, only ever return errors; unless an error occurs, they run forever. Other functions never error but need to return a `Result` nonetheless, for example, to match a trait signature. For functions like these , Rust provides the _never type_, written with the `!` syntax.
+
+The never type represents a value that can never be generated. You cannot construct an instance of this type yourself - the only way to make one is by entering an infinite loop or panicking, or through a handful of other special operations that the compiler knows never return.
+
+With `Result`, when you have an `Ok` or `Err` that you know will never be used, you can set it to the `!` type. If you write a function that returns `Result<T, !>`, you will be unable to ever return `Err`, since the only way to do so is to enter code that will never return. Because the compiler knows that any variant with `!` will never be produced, it can also optimize your code with that in mind, such as by not generating the panic code for an `unwrap` on `Result<T, !>`. And when you pattern match, the cimpiler knows that any variant that contains a `!` does not even need to be listed.
+
 ## Common Traits for Types
 
 - `Debug`
@@ -119,21 +127,36 @@ impl<Stage> Rocket<Stage> {
 
 ## Errors
 
+When making your own error type, you need to take a number of steps to make the error type play nicely with the rest of the Rust ecosystem.
+
+1. Your error type should implement the `std::error::Error` trait, which provides callers with common methods for introspecting error types. The main method if interest is `Error::source`, which provides a mechanism to find the underlying cause of an error. This is most commonly used to print a backtrace that displays a trace all the way back to the error's root cause.
+2. Your type should implement both `Display` and `Debug` so that callers can meaningfully print your error. This is required if you implement the `Error` trait. In general, your implementation of `Display` should give a one-line description of what went wrong that can easily be folded into other error messages. The display format should be lowercase and without trailing punctuation so that it fits nicely into other, larger error reports. `Debug` should provide a more descriptive error including auxiliary information that may be useful in tracking down the cause of the error, such as port numbers, request identifiers, filepaths, and the like, which `#[derive(Debug)]` is usually sufficient for.
+3. Your type should, if possible, implement both `Send` and `Sync` so that users are able to share the error across thread boundaries. If your error type is not thread-safe, you will find that it's almost impossible to use your crate in a multithreaded context. Error types that implement `Send` and `Sync` are also much easier to use with the very common `std::io::Error` type, which is able to wrap errors that implement `Error`, `Send`, and `Sync`.
+4. Where possible, your error type should be `'static`.
+
+> In general, the community consensus is that errors should be rare and therefore should not add much cost to the "happy path". For that reason, errors are often placed behind a pointer type, such as a `Box` or `Arc`. This way, they're unlikely to add much to the size of the overall `Result` type they're contained within.
+
+---
+
+> While `Box<dyn Error + ...>` is an attractive type-erased error type, it counterintuitively does not itself implement `Error`. Therefore, consider adding your own `BoxError` type for type erasure in libraries that does implement `Error`.
+---
+> Keep in mind that `()` does not implement the `Error` trait. This means that it cannot be type-erased into `Box<dyn Error>` and can be a bit of a pain to use with `?`. For this reason, it is often better to define your own unit struct type, implement `Error` for it, and use that as the error instead of `()` in these cases.
+
+### Propagating Errors
+
+Rust's `?` operator acts as a shorthand for _unwrap or return early_, for working easily with errors. But it also has a few other tricks up its sleeve that are worth knowing about.
+
+The `?` operator at the time of writing uses `From`, not `Into`.
+
+1. `?` performs type conversion through the `From` trait. In a function that returns `Result<T, E>`, you can use `?` on any `Result<T, X>` where `E: From<X>`. Under the hood, the `?` operator calls `From::from` on the error value to convert it to a boxed trait object, a `Box<dyn error::Error>`, which is polymorphic-- that means that lots of different kinds of errors can be returned from the same function because all errors act the same since they all implement the `error::Error` trait.
+2. `?` operator is really just syntax sugar for a trait tentatively called `Try`
+
 Hint: There are two different possible `Result` types produced within
 `main()`, which are propagated using `?` operators. How do we declare a
 return type from `main()` that allows both?
 
-Another hint: under the hood, the `?` operator calls `From::from`
-on the error value to convert it to a boxed trait object, a
-`Box<dyn error::Error>`, which is polymorphic-- that means that lots of
-different kinds of errors can be returned from the same function because
-all errors act the same since they all implement the `error::Error` trait.
 Check out this section of the book:
 <https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator>
-
-This exercise uses some concepts that we won't get to until later in the
-course, like `Box` and the `From` trait. It's not important to understand
-them in detail right now, but you can read ahead if you like.
 
 Read more about boxing errors:
 <https://doc.rust-lang.org/stable/rust-by-example/error/multiple_error_types/boxing_errors.html>
