@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
+        "backtraces",
+        "codegen",
         "fsfreeze",
-        "gcloud"
+        "gcloud",
+        "monomorphized"
     ]
 }

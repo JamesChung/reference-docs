@@ -11,6 +11,11 @@
 - `#[must_use]`: Add it to any type, trait, or function, and the compiler will issue a warning if the user's code receives and element of that type or trait, or calls that function, and does not explicitly handle it.
 - `#[non_exhaustive]`: You can add it to any type definition, and the compiler will disallow the use of implicit constructors and non-exhaustive pattern matches(that is, patterns without a trailing, `..`) on that type.
 
+## Attributes
+
+- `#[cfg(feature = "some-feature")]`: makes it so that the next "thing" in the source code is compiled only if the `some-feature` feature is enabled. Similarly, `if cfg!(feature = "some-feature")` is equivalent to `if true` only if the `derive` feature is enabled (and `if false` otherwise).
+  - You can place `#[cfg]` in front of certain Rust _items_ such as functions and type definitions, `impl` blocks, modules, and `use` statements - as well as on certain other contructs like struct fields, function arguements, and statements.
+
 ## Documentation
 
 Consider marking parts of your interface that are not intended to be public but are needed for legacy reasons with `#[doc(hidden)]`, so that they do not clutter up your documentation.
@@ -20,6 +25,12 @@ Use `#[doc(cfg(..))]` to highlight items that are only available under certain c
 Use `#[doc(alias = "...")]` to make types and methods discoverable under other names that users may search for them by.
 
 In the top-level documentation, point the user to commonly used modules, features, types, traits, and methods.
+
+## Creates vs. Packages
+
+A create is a Rust module hierarchy starting at a root _.rs_ file (one where you can use crate-level attributes like `#![feature]`) - usually something like _lib.rs_ or _main.rs_.
+
+In contrast, a package is a collection of crates and metadata, so essentially all that's described by a _Cargo.toml_ file. That may include a library crate, multiple binary crates, some integration test crates, and maybe even multiple workspace members that themselves have _Cargo.toml_ files.
 
 ## The SemVer Trick
 
@@ -79,7 +90,6 @@ For any type that can be iterated over, consider implementing `IntoIterator` for
 - `From`
 - `Into`
 - `Borrow`
-
 
 If you provide a relatively transparent wrapper type (like `Arc`), there's a good chance you'll want to implement `Deref` so that users can call methods on the inner type by just using the `.` operator.
 
@@ -163,3 +173,203 @@ Read more about boxing errors:
 
 Read more about using the `?` operator with boxed errors:
 <https://doc.rust-lang.org/stable/rust-by-example/error/multiple_error_types/reenter_question_mark.html>
+
+## Project Structure
+
+### Cargo
+
+#### Defining and Including Features
+
+Features are defined in `Cargo.toml`.
+
+```toml
+[package]
+name = "foo"
+...
+[features]
+derive = ["syn"]
+
+[dependencies]
+syn = { version = "1", optional = true }
+```
+
+When Cargo compiles this crate, it will not compile the `syn` crate by default, which reduces compile time (often significantly). The `syn` crate will be compiled only if a downstream crate needs to use the APIs enabled by the `derive` feature and explicitly opts in to it.
+
+> How such a downstream crate `bar` would enable the `derive` feature, and thus include the `syn` dependency.
+
+```toml
+[package]
+name = "bar"
+...
+[dependencies]
+foo = { version = "1", features = ["derive"] }
+```
+
+Some features are used so frequently that it makes more sense to have a crate opt out of them rather than in to them. To support this, Cargo allows you to define a set of default features for a crate. And similarly, it allows you to opt out of the default features of a dependency.
+
+> How `foo` can make its `derive` feature enabled by default, while also opting out of some of `syn`'s default features and instead enabling only the ones it needs for the `derive` feature.
+
+```toml
+[package]
+name = "foo"
+...
+[features]
+derive = ["syn"]
+default = ["derive"]
+
+[dependencies.syn]
+version = "1"
+default-features = false
+features = ["derive", "parsing", "printing"]
+optional = true
+```
+
+Here, if a create depends on `foo` and does not explicitly opt out of the default features, it will also compile `foo`'s `syn` dependency. In turn, `syn` will be built with only the three listed features, and no others. Opting out of default features this way, and opting in to only what you need, is a great way to cut down on your compile times!
+
+> If you're writing a large crate where you expect that your users will need only a subset of the functionality, you should consider making it so that larger components (usually modules) are guarded by features. That way, users can opt in to, and pay the compilation cost of, only the parts they really need.
+
+#### Workspaces
+
+A _workspace_ is a collection of crates (often called _subcrates_) that are tied together by a top-level `Cargo.toml` file.
+
+```toml
+[workspace]
+members = [
+  "foo",
+  "bar/one",
+  "bar/two",
+]
+```
+
+The `members` array is a list of directories that each contain a crate in the workspace. Those creates all have their own `Cargo.toml` files in their own subdirectories, but they share a single `Cargo.lock` file and a single output directory.
+
+The create names don't need to match the entry in `members`. It is common, but not required, that crates in a workspace share a name prefix, usually chosen as the name of the "main" create. For example, in the `tokio` crate, the members are called `tokio`, `tokio-test`, `tokio-macros`, and so on.
+
+Perhaps the most important feature of workspaces is that you can interact with all of the workspace's members by invoking `cargo` in the root of the workspace. Want to check that they all compile? `cargo check` will check them all. Want to run all your tests? `cargo test` will test them all. It's not quite as convenient as having everything in one crate, so don't go splitting everything into minuscule crates, but it's a pretty good approximation.
+
+> Cargo commands will generally do the "right thing" in a workspace. If you ever need to disambiguate, such as if two workspace crates both have a binary by the same name, use the `-p` flag (for package). If you are in the subdirectory for a particular workspace crate, you can pass `--workspace` to perform the command for the entire workspace instead.
+
+Once you have a workspace-level `Cargo.toml` with the array of workspace members, you can set your crates to depend on one another using path dependencies.
+
+```toml
+# bar/two/Cargo.toml
+[dependencies]
+one = { path = "../one" }
+# bar/one/Cargo.toml
+[dependencies]
+foo = { path = "../../foo" }
+```
+
+Now if you make a change to the crate in _bar/two_, then only that crate is re-compiled, since `foo` and _bar/one_ did not change. It may even be faster to compile your project from scratch, since the compiler does not need to evaluate your entire project source for optimization opportunities.
+
+## Project Configuration
+
+### Crate Metadata
+
+For crates with a more convoluted project layout, it's also useful to set the `include` and `exclude` metadata fields. These dictate which files should be included and published in your package.
+
+__By default, Cargo includes all files in a crate's directory except any listed in your `.gitignore` file.__
+
+You may not want this if you also have large test fixtures, unrelated scripts, or other auxiliary data in the same directory that you _do_ want under version control.
+
+As their names suggest, `include` and `exclude` allow you to include only a specific set of files or exclude files matching a given set of patterns, respectively.
+
+> If you have a create that should never be published, or should be published only to certain alternative registries (that is, not to crates.io), you can set the `publish` directive to `false` or to a list of allowed registries.
+
+[Metadata Directives Reference](https://doc.rust-lang.org/cargo/reference/manifest.html)
+
+### Build Configuration
+
+`Cargo.toml` can give you control over how Cargo builds your crate.
+
+#### [patch]
+
+The `[patch]` section of _Cargo.toml_ allows you to specify a different source for a dependency that you can use temporarily, no matter where in your dependencies the patched dependency appears.
+
+This is invaluable when you need to compile your crate against a modified version of some transitive dependency to test a bug fix, a performance improvement, or a new minor release you're about to publish.
+
+```toml
+[patch.crates-io]
+# use a local (presumably modified) source
+regex = { path = "/home/james/regex" }
+# use a modification on a git branch
+serde = { git = "https://github.com/serde-rs/serde.git", branch = "faster" }
+# patch a git dependency
+[patch.'https://github.com/jonhoo/project.git']
+project = { path = "/home/james/project" }
+```
+
+Even if you patch a dependency, Cargo takes care to check the crate versions so that you don't accidently end up patching the wrong major version of a crate. If you for some reason transitively depend on multiple major versions of the same crate, you can patch each one by giving them distinct identifiers.
+
+```toml
+[patch.crates-io]
+nom4 = { path = "/home/james/nom4", package = "nom" }
+nom5 = { path = "/home/james/nom5", package = "nom" }
+```
+
+Cargo will look at the _Cargo.toml_ inside each path, realize that `/nom4` contains major version 4 and that `/nom5` contains major version 5, and patch the two versions appropriately. The `package` keyword tells Cargo to look for a crate by the name `nom` in both cases instead of using the dependency identifiers (the part on the left) as it does by default. You can use `package` this way in your regular dependencies as well to rename a dependency.
+
+Keep in mind that patches are not taken into account in the package that's uploaded when you publish a crate. A crate that depends on your crate will use only it's own `[patch]` section (which may be empty), not that of your crate!
+
+#### [profile]
+
+The `[profile]` section lets you pass additional options to the Rust compiler in order to change the way it compiles your crate. These options fall primarily into three categories:
+
+- performance options
+- debugging options
+- options that change code behavior in user-defined ways
+
+They all have different defaults depending on whether you are compiling in debug mode or in release mode (other modes also exist).
+
+The three primary performance options are:
+
+- `opt-level`
+- `codegen-units`
+- `lto`
+
+---
+
+The `opt-level` option tweaks runtime performance by telling the compiler how aggressively to optimize your program (0 is "not at all", 3 is "as much as you can"). The higher the setting, the more optimized your code will be, which _may_ make it run faster. Extra optimization comes at the cost of higher compile times, which is why optimizations are generally enabled only for release builds.
+
+> You can also set `opt-level` to _"s"_ to optimize for binary size, which may be important on embedded platforms.
+
+---
+
+The `codegen-units` option is about compile-time performance. It tells the compiler how many independent compilation tasks (_code generation units_) it is allowed to split the compilation of a single crate into. The more pieces a large crate's compilation is split into, the faster it will compile, since more threads can help compile the crate in parallel. __Unfortunately, to achieve this speedup, the threads need to work more or less independently, which means code optimization suffers.__ Imagine, for example, that the segment of a create compiling in one thread could benefit from inlining some code in a different segment - since the two segments are independent, that inlining can't happen! This setting, then, is a trade-off between compile-time performance and runtime performance.
+
+By default, Rust uses an effectively unbounded number of codegen units in debug mode (basically, "compile as fast as you can") and a smaller number (16 at the time of writing) in release mode.
+
+---
+
+The `lto` setting toggles _link-time optimization (LTO)_, which enables the compiler/linker to jointly optimize bits of your program, known as _compilation units_, that were originally compiled separately. The output from each compilation unit includes information about the code that went into that unit. After all the units have been compiled, the linker makes another pass over all of the units and uses that additional information to optimize the combined compiled code. This extra pass adds to the compile time but recovers most of the runtime performance that may have been lost due to splitting the compilation into smaller parts. In particular, LTO can offer significant performance boosts to performance-sensitive programs that might benefit from cross-crate optimization. __Beware, cross-crate LTO can add a lot to your compile time.__
+
+Rust performs LTO across all the codegen units within each crate by default in an attempt to make up for the lost optimizations caused by using many codegen units. Since the LTO is performed only within each crate, rather than across crates, this extra pass isn't too onerous, and the added compile time should be lower than the amount of time saved by using a lot of codegen units. Rust also offers a technique known as _thin LTO_, which allows the LTO pass to be mostly parallelized, at the cost of missing some optimizations a "full" LTO pass would have found.
+
+> LTO can be used to optimize across foreign function interface boundaries in many cases, too. See the `linker-plugin-lto` `rustc` flag for more details.
+
+---
+
+When a thread panics and unwinds, other threads continue running unaffected. Only when (and if) the thread that ran `main` exits does the program terminate. That is, the panic is generally isolated to the thread in which the panic occurred.
+
+> The panic setting is global - if you set it to `abort`, all your dependencies are also compiled with `abort`.
+
+You can have backtraces even with `panic=abort` by passing `-Cforce-unwind-tables` to `rustc`, which makes `rustc` include the information necessary to walk back up the stack while still terminating the program on a panic.
+
+#### Profile Overrides
+
+You can set profile options for just a particular dependency, or a particular profile, using _profile overrides_.
+
+Enable aggressive optimizations for the `serde` crate and moderate optimizations for all other crates in debug mode, using the `[profile.<profile-name>.package.<crate-name>]` syntax.
+
+```toml
+[profile.dev.package.serde]
+opt-level = 3
+[profile.dev.package."*"]
+opt-level = 2
+```
+
+You can also specify global profile defaults using a `[profile.dev]` (or similar) section in the Cargo configuration file in _~/.cargo/config_
+
+When you set optimization parameters for a specific dependency, keep in mind that the parameters apply only to the code compiled as part of that crate; if `serde` in this example has a generic method or type that you use in your crate, the code of that method or type will be monomorphized and optimized in your create, and your crate's profile settings will apply, not those in the profile override for `serde`.
+
+### Conditional Compilation
