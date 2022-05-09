@@ -2,6 +2,7 @@
     "cSpell.words": [
         "backtraces",
         "codegen",
+        "combinators",
         "fsfreeze",
         "gcloud",
         "monomorphized"
