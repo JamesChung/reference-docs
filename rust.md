@@ -373,3 +373,19 @@ You can also specify global profile defaults using a `[profile.dev]` (or similar
 When you set optimization parameters for a specific dependency, keep in mind that the parameters apply only to the code compiled as part of that crate; if `serde` in this example has a generic method or type that you use in your crate, the code of that method or type will be monomorphized and optimized in your create, and your crate's profile settings will apply, not those in the profile override for `serde`.
 
 ### Conditional Compilation
+
+To conditionally compile sections of your code you can use the `cfg` keyword. It's usually in the form of `#[cfg(condition)]`, which says to compile the next item only if `condition` is true.
+
+Rust also has `#[cfg_attr(condition, attribute)]` which is compiled as `#[attribute]` if `condition` holds and is a no-op otherwise.
+
+You can also evaluate a `cfg` condition as a Boolean expression using the `cfg!(condition)` macro.
+
+Every `cfg` construct takes a single condition made up of options, like `feature = "some-feature"`, and the combinators `all`, `any`, and `not`. Options are either simple names, like `unix`, or key/value pairs like those used by feature conditions.
+
+There are a number of interesting options you can make compilation depend on.
+
+#### Feature options
+
+Feature options take the form `feature = "name-of-feature"` and are considered true if the name feature is enabled. You can check for multiple features in a single condition using the combinators. For example, `any(feature = "f1", feature = "f2")` is true if either feature `f1` or feature `f2` is enabled.
+
+#### Operating system options
