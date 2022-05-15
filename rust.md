@@ -389,3 +389,41 @@ There are a number of interesting options you can make compilation depend on.
 Feature options take the form `feature = "name-of-feature"` and are considered true if the name feature is enabled. You can check for multiple features in a single condition using the combinators. For example, `any(feature = "f1", feature = "f2")` is true if either feature `f1` or feature `f2` is enabled.
 
 #### Operating system options
+
+These use key/value syntax with the key `target_os` and values like `windows`, `macos`, and `linux`. You can also specify a family of operating systems using `target_family`, which takes the value `windows` or `unix`. These are common enough that they have received their own named short forms, so you can use `cfg(windows)` and `cfg(unix)` directly. For example, if you wanted a particular code segment to be compiled only on macOS and Windows, you would write: `#[cfg(any(windows, target_os = "macos"))]`
+
+#### Context options
+
+These let you tailor code to a particular compilation context. The most common of these is the `test` option, which is true only when the crate is being compiled under the test profile. Keep in mind that `test` is set only for the crate that is being tested, not for any of its dependencies. This also means that `test` is not set in your crate when running integration tests; it's the integration tests that are compiled under the test profile, whereas your actual crate is compiled normally (that is, without `test` set). The same applies to the `doc` and `doctest` options, which are set only when building documentation or compiling doctests, respectively. There's also the `debug_assertions` option, which is set in debug mode by default.
+
+#### Tool options
+
+Some tools, like clippy and Miri, set custom options that let you customize compilation when run under these tools. Usually, these options are named after the tool in question. For example, if you want a particular compute-intensive test not to run under Miri, you can give it the attribute `#[cfg_attr(miri, ignore)]`.
+
+#### Architecture options
+
+These let you compile based on the CPU instruction set the compiler is targeting. You can specify a particular architecture with `target_arch`, wich takes values like `x86`, `mips`, and `aarch64`, or you can specify a particular platform feature with `target_feature`, wich takes values like `avx` or `sse2`. For very low-level code, you may also find the `target_endian` and `target_pointer_width` options useful.
+
+#### Compiler options
+
+These let you adapt your code to the platform ABI (Application Binary Interface) it is compiled against and are available through `target_env` with values like `gnu`, `msvc`, and `musl`. FOr historical reasons, this value is often empty, especially on GNU platforms. You normally need this option only if you need to interface directly with the environment ABI, such as when linking against an ABI-specific symbol name using `#[link]`.
+
+> Here, we specify that `winrt` should be considered a dependency only under windows and `nix` only under unix.
+
+```toml
+[target.'cfg(windows)'.dependencies]
+winrt = "0.7"
+[target.'cfg(unix).dependencies]
+nix = "0.17"
+```
+
+> Recommendation: set up your CI infrastructure to perform basic auditing of your dependencies using tools like `cargo-deny` and `cargo-audit`. These tools will detect cases where you transitively depend on multiple major versions of a given dependency, where you depend on crates that are unmaintained or have known security vulnerabilities, or where you use licenses that you may want to avoid. Using such a tool is a great way to raise the quality of your codebase in an automated way!
+
+### Versioning
+
+Minimum supported Rust version (MSRV)
+
+There are two techniques crate authors can use to make life a little easier for users.
+
+1. Establish an MSRV policy promising that new versions of a crate will always compile with any stable release from the last _X_ months. The exact number varies, but 6 or 12 months is common.
+2. Make sure to increase the minor version number of your crate any time that the MSRV changes. So, if you release version 2.7.0 of your crate and that increases your MSRV from Rust 1.44 to Rust 1.45, then a project that is stuck on 1.44 and that depends on your crate can use the dependency version specifier `version = "2, <2.7"` to keep the project working until it can move on to Rust 1.45. It's important that your increment the minor version, not just the patch version, so that you can still issue critical security fixes for the previous MSRV release by doing another patch release if necessary.
