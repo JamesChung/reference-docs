@@ -2,6 +2,8 @@
 
 ## Visibility Modifiers
 
+<https://doc.rust-lang.org/reference/visibility-and-privacy.html>
+
 `pub(crate)`
 
 `pub(in path)`
