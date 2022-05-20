@@ -429,3 +429,88 @@ There are two techniques crate authors can use to make life a little easier for 
 
 1. Establish an MSRV policy promising that new versions of a crate will always compile with any stable release from the last _X_ months. The exact number varies, but 6 or 12 months is common.
 2. Make sure to increase the minor version number of your crate any time that the MSRV changes. So, if you release version 2.7.0 of your crate and that increases your MSRV from Rust 1.44 to Rust 1.45, then a project that is stuck on 1.44 and that depends on your crate can use the dependency version specifier `version = "2, <2.7"` to keep the project working until it can move on to Rust 1.45. It's important that your increment the minor version, not just the patch version, so that you can still issue critical security fixes for the previous MSRV release by doing another patch release if necessary.
+
+## Testing
+
+When you run `cargo test --lib`, the only special thing Cargo does is pass the `--test` flag to `rustc`. This flag tells `rustc` to produce a test binary that runs all the unit tests, rather than just compiling the crate's library or binary.
+
+Behind the scenes, `--test` has two primary effects.
+
+1. It enables `cfg(test)` so that you can conditionally include testing code.
+2. It makes the compiler generate a _test harness_: a carefully generated `main` function that invokes each `#[test]` function in your program when it's run.
+
+### The Test Harness
+
+The compiler generates the test harness `main` function through a mix of procedural macros.
+
+Essentially, the harness transforms every function annotated by `#[test]` into a test _descriptor_ - this is the procedural macro part. It then exposes the path of each of the descriptors to the generated `main` function. The descriptor includes information like the test's name, any additional options it has set (like `#[should_panic]`), and so on. At its core, the test harness iterates over the tests in the crate, runs them, captures their results, and prints the results.
+
+Integration tests (the tests in `tests/`) follow the same process as unit tests, with the one exception that they are each compiled as their own separate crate, meaning they can access only the main crate's public interface and are run against the main crate compiled without `#[cfg(test)]`. A test harness is generated for each file in `tests/`. Test harnesses are not generated for files in subdirectories under _tests/_ to allow you to have shared submodules for your tests.
+
+> If you explicitly want a test harness for a file in a subdirectory, you can opt in to that by calling the file main.rs
+
+Rust does not require that you use the default test harness. You can instead opt out of it and implement your own `main` method that represents the test runner by setting `harness = false` for a given integration test in _Cargo.toml_
+
+```toml
+[[test]]
+name = "custom"
+path = "tests/custom.rs"
+harness = false
+```
+
+Without the test harness, none of the magic around `#[test]` happens. Instead, you're expected to write your own `main` function to run the testing code you want to execute. Essentially, you're writing a normal Rust binary that just happens to be run by `cargo test`. That binary is responsible for handling all the things that the default harness normally does (if you want to support them), such as command line flags. The `harness` property is set separately for each integration test, so you can have one test file that uses the standard harness and one that does not.
+
+### Doctests
+
+Rust code snippets in documentation comments are automatically run as test cases. Because doctests appear in the public documentation of your crate, and users are likely to mimic what they contain, they are run as integration tests. This means that the doctests don't have access to private fields and methods, and `test` is not set on the main crate's code. Each doctest is compiled as its own dedicated crate and is run in isolation, just as if the user had copy-pasted the doctest into their own program.
+
+Behind the scenes, the compiler performs some preprocessing on doctests to make them more concise. Most importantly, it automatically adds an `fn main` around your code. This allows doctests to focus only on the important bits that the user is likely to care about, like the parts that actually use types and methods from your library, without including unnecessary boilerplate.
+
+You can opt out of this auto-wrapping by defining your own `fn main` in the doctest. You may want to do this, for example, if you want to write an asynchronous `main` function using something like `#[tokio::main] async fn main`, or if you want to add additional modules to the doctest.
+
+To use the `?` operator in your doctest, you don't normally have to use a custom `main` function as `rustdoc` includes some heuristics to set the return type to `Result<(), impl Debug>` if your code looks like it makes use of `?` (for example, if it ends with `Ok(())`). If type inference gives you a hard time about the error type ofr the function, you can disambiguate it by changing the last line of the doctest to be explicitly typed, like this: `Ok::<(), T>()`.
+
+Doctests have a number of additional features that come in handy as you write documentation for more complex interfaces. The first is the ability to hide individual lines. If you prefix a line of a doctest with a `#`, that line is included when the doctest is compiled and run, but it is not included in the code snippet generated in the documentation. This lets you easily hide details that are not important to the current example, such as implementing traits for dummy types or generating values. it is also useful if you wish to present a sequence of examples without showing the same leading code each time.
+
+```rust
+/// Completely frobnifies a number though I/O
+///
+/// In this first example we hide the value generation.
+/// ```
+/// # let unfrobnified_number = 0;
+/// # let already_frobnified = 1;
+/// assert!(frobnify(unfrobnified_number).is_ok());
+/// assert!(frobnify(already_frobnified).is_err());
+/// ```
+///
+/// Here's an example that uses ? on multiple types
+/// and thus needs to declare the concrete error type,
+/// but we don't want to distract the user with that.
+/// We also hide the use that brings the function into scope.
+/// ```
+/// # use mylib::frobnify;
+/// frobnify("0".parse()?)?;
+/// # Ok::<(), anyhow::Error>(())
+/// ```
+///
+///You could even replace an entire block of code completely,
+/// though use this very sparingly:
+/// ```
+/// # /*
+/// let i = ...;
+/// # */
+/// # let i = 42;
+/// frobnify(i)?;
+/// ```
+fn frobnify(i: usize) -> std::io::Result<()> { ...
+```
+
+> Much like `#[test]` functions, doctests also support attributes that modify how the doctest is run. These attributes go immediately after the tripple-backtick used to denote a code block, and miltiple attributes can be separated by commas.
+
+Like with test functions, you can specify the `should_panic` attribute to indicate that the code in a particular doctest should panic when run, or `ignore` to check the code segment only if `cargo test` is run with the `--ignored` flag. You can also use the `no_run` attribute to indicate that a given doctest should compile but should not be run.
+
+```compile_fail
+# struct MyNonSendType(std::rd::Rc<()>);
+fn is_send<T: Send>() { ... }
+is_send::<MyNonSendType>();
+```

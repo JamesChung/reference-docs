@@ -3,6 +3,8 @@
         "backtraces",
         "codegen",
         "combinators",
+        "doctest",
+        "doctests",
         "fsfreeze",
         "gcloud",
         "monomorphized"
