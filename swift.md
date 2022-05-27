@@ -42,7 +42,8 @@ invokeFunc(x: 10, y: 20, {
 
 ### Omission of the return type
 
-> If the anonymous function's return type is already known to the compiler, you can omit the arrow operator and the specification of the return type
+> If the anonymous function's return type is already known to the compiler, you
+> can omit the arrow operator and the specification of the return type
 
 ```swift
 func invokeFunc(x: Int, y: Int, _ f:(Int, Int) -> Int) {
@@ -57,7 +58,8 @@ invokeFunc(x: 10, y: 20, {
 
 ### Omission of the `in` expression when there are no parameters
 
-> If the anonymous function takes no parameters, and if the return type can be omitted, the `in` expression itself can be omitted
+> If the anonymous function takes no parameters, and if the return type can be
+> omitted, the `in` expression itself can be omitted
 
 ```swift
 func invokeFunc(_ f:() -> ()) {
@@ -71,7 +73,8 @@ invokeFunc({
 
 ### Omission of the parameter types
 
-> If the anonymous function takes parameters and their types are already known to the compiler, the types can be omitted
+> If the anonymous function takes parameters and their types are already known
+> to the compiler, the types can be omitted
 
 ```swift
 func invokeFunc(x: Int, y: Int, _ f:(Int, Int) -> Int) {
@@ -86,7 +89,8 @@ invokeFunc(x: 10, y: 20, {
 
 ### Omission of the parentheses
 
-> If the parameter types are omitted, the parentheses around the parameter list can be omitted
+> If the parameter types are omitted, the parentheses around the parameter list
+> can be omitted
 
 ```swift
 func invokeFunc(x: Int, y: Int, _ f:(Int, Int) -> Int) {
@@ -101,7 +105,10 @@ invokeFunc(x: 10, y: 20, {
 
 ### Omission of the `in` expression when there are parameters
 
-> If the return type can be omitted, and if the parameter types are already known to the compiler, you can omit the `in` expression and refer to the parameters directly within the body of the anonymous function by using the magic names `$0`, `$1`, and so on, in order
+> If the return type can be omitted, and if the parameter types are already
+> known to the compiler, you can omit the `in` expression and refer to the
+> parameters directly within the body of the anonymous function by using the
+> magic names `$0`, `$1`, and so on, in order
 
 ```swift
 func invokeFunc(x: Int, y: Int, _ f:(Int, Int) -> Int) {

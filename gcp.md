@@ -32,11 +32,12 @@ IAM primitive roles offer fixed, coarse-grained levels of access
   - Manage billing
   - Add and remove administrators
 
-A project can have multiple owners, editors, viewers, and billing administrators.
+A project can have multiple owners, editors, viewers, and billing
+administrators.
 
 ### Predefined Roles
 
-IAM __predefined__ roles apply to a particular GCP service in a project.
+IAM **predefined** roles apply to a particular GCP service in a project.
 
 IAM predefined roles offer more fine-grained permissions on particular services.
 
@@ -44,40 +45,47 @@ IAM predefined roles offer more fine-grained permissions on particular services.
 
 IAM custom roles let you define a precise set of permissions.
 
-Good to make least-privilege custom roles based on your organization's security policy needs.
+Good to make least-privilege custom roles based on your organization's security
+policy needs.
 
 ### Service Accounts
 
 Service Accounts control server-to-serer interactions
 
-- Provide an identity for carrying out __server-to-server__ interactions in a project
-- Used to __authenticate__ from one service to another
-- Used to __control privileges__ used by resources
-  - So that applications can perform actions on behalf of authenticated end users
-- Identified with an __email__ address:
-  - __PROJECT_NUMBER__-compute@developer.gserviceaccount.com
-  - __PROJECT_ID__@appspot.gserviceaccount.com
+- Provide an identity for carrying out **server-to-server** interactions in a
+  project
+- Used to **authenticate** from one service to another
+- Used to **control privileges** used by resources
+  - So that applications can perform actions on behalf of authenticated end
+    users
+- Identified with an **email** address:
+  - **PROJECT_NUMBER**-compute@developer.gserviceaccount.com
+  - **PROJECT_ID**@appspot.gserviceaccount.com
 - Service accounts authenticate using keys
   - Google manages keys for Compute Engine and App Engine.
 - You can assign a predefined or custom IAM role to the service account.
 - Three types of Service Accounts:
   1. User-created (custom)
   2. Built-in
-      - Compute Engine and App Engine default service accounts
+     - Compute Engine and App Engine default service accounts
   3. Google APIs Service Accounts
 - Scopes:
-  - Access scopes specify APIs instances have authorization to access, and define level of access instances have with those services
+  - Access scopes specify APIs instances have authorization to access, and
+    define level of access instances have with those services
     - Each service has its own scopes
-  - Default Compute Engine service account automatically enabled with the following access scopes:
+  - Default Compute Engine service account automatically enabled with the
+    following access scopes:
     - Read-only access to Google Cloud Storage
     - Write access to the Compute Engine log
 
 ## Use APIs Explorer to help you write your code
 
-- The APIs Explorer is an interactive tool that lets you easily try Google APIs using a browser.
+- The APIs Explorer is an interactive tool that lets you easily try Google APIs
+  using a browser.
 - With the APIs Explorer, you can:
   - Browse quickly through available APIs and versions.
-  - See methods available for each API and what parameters they support along with inline documentation.
+  - See methods available for each API and what parameters they support along
+    with inline documentation.
   - Execute requests for any method and see responses in real time.
   - Easily make authenticated and authorized API calls.
 
@@ -86,16 +94,20 @@ Service Accounts control server-to-serer interactions
 - Unmount the disk or prevent writes
 - `sudo umount</mount/point>
 - For a boot disk the best practice is to shutdown the server
-- If you can't unmount the disk use __sync__ and __fsfreeze__
+- If you can't unmount the disk use **sync** and **fsfreeze**
 
 ## Network fundamentals
 
-- Network resources are *global* resources.
+- Network resources are _global_ resources.
   - They can be visible to all resources in a project.
-- The FQDN pattern is [HOSTNAME].c.[PROJECT_ID].internal to communicate with internal resources
+- The FQDN pattern is [HOSTNAME].c.[PROJECT_ID].internal to communicate with
+  internal resources
 - Firewall rule tags
-  - Use tags to manage how rules are applied to instances. Makes management easier as your rule set get's large.
-  - Example: If you create a firewall rule to allow port 21, if the tag associated with the rule is `FTP-SERVER` then if you create an instance with the same tag that instance will adopt the matching firewall rule.
+  - Use tags to manage how rules are applied to instances. Makes management
+    easier as your rule set get's large.
+  - Example: If you create a firewall rule to allow port 21, if the tag
+    associated with the rule is `FTP-SERVER` then if you create an instance with
+    the same tag that instance will adopt the matching firewall rule.
 
 ## VPCs
 
@@ -105,7 +117,8 @@ Service Accounts control server-to-serer interactions
 ## Cloud Load Balancing
 
 - Users get a single, global anycast IP address
-- Traffic goes over the Google backbone from the closest point-of-presence to the user
+- Traffic goes over the Google backbone from the closest point-of-presence to
+  the user
 - Backends are selected based on load
 - Only healthy backends receive traffic
 - No pre-warming is required

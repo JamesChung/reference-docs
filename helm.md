@@ -4,13 +4,13 @@
 
 ## `repo`
 
-| Option | Description |
-| :-: | :- |
-|`add`|add a chart repository|
-|`index`|generate an index file given a directory containing packaged charts|
-|`list`|list chart repositories|
-|`remove`|remove one or more chart repositories|
-|`update`|update information of available charts locally from chart repositories|
+|  Option  | Description                                                            |
+| :------: | :--------------------------------------------------------------------- |
+|  `add`   | add a chart repository                                                 |
+| `index`  | generate an index file given a directory containing packaged charts    |
+|  `list`  | list chart repositories                                                |
+| `remove` | remove one or more chart repositories                                  |
+| `update` | update information of available charts locally from chart repositories |
 
 ```sh
 $ helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -28,12 +28,14 @@ Update Complete. ⎈ Happy Helming!⎈
 
 ## `search`
 
-| Option | Description |
-| :-: | :- |
-|`hub`|search for charts in the Artifact Hub or your own hub instance|
-|`repo`|search repositories for a keyword in charts|
+| Option | Description                                                    |
+| :----: | :------------------------------------------------------------- |
+| `hub`  | search for charts in the Artifact Hub or your own hub instance |
+| `repo` | search repositories for a keyword in charts                    |
 
-> Helm will search not just the package names, but also other fields like labels and descriptions. Thus, we could search for content and see Drupal listed there because it is a content management system:
+> Helm will search not just the package names, but also other fields like labels
+> and descriptions. Thus, we could search for content and see Drupal listed
+> there because it is a content management system:
 
 ```sh
 $ helm search repo drupal
@@ -50,17 +52,19 @@ bitnami/drupal  6.2.19          8.8.5           One of the most versatile op...
 ...
 ```
 
-> A chart version is the version of the Helm chart. The app version is the version of the application packaged in the chart. Helm uses the chart version to make versioning decisions, such as which package is newest.
+> A chart version is the version of the Helm chart. The app version is the
+> version of the application packaged in the chart. Helm uses the chart version
+> to make versioning decisions, such as which package is newest.
 
 ## `get`
 
-| Option | Description |
-| :-: | :- |
-|`all`|download all information for a named release|
-|`hooks`|download all hooks for a named release|
-|`manifest`|download the manifest for a named release|
-|`notes`|download the notes for a named release|
-|`values`|download the values file for a named release|
+|   Option   | Description                                  |
+| :--------: | :------------------------------------------- |
+|   `all`    | download all information for a named release |
+|  `hooks`   | download all hooks for a named release       |
+| `manifest` | download the manifest for a named release    |
+|  `notes`   | download the notes for a named release       |
+|  `values`  | download the values file for a named release |
 
 ```sh
 helm get values [release] > values.yaml
@@ -90,10 +94,10 @@ NOTES:
 
   echo Username: user
   echo Password: $(kubectl get secret --namespace default mysite-drupal...
-
 ```
 
-> Instance names are scoped to Kubernetes namespaces. We could install two instances named mysite as long as they each lived in a different namespace.
+> Instance names are scoped to Kubernetes namespaces. We could install two
+> instances named mysite as long as they each lived in a different namespace.
 
 ```sh
 kubectl create ns first
@@ -106,7 +110,8 @@ helm install --namespace second mysite bitnami/drupal
 
 ### Listing your installations
 
-> NOTE: By default, Helm uses the namespace your Kubernetes configuration file sets as the default.
+> NOTE: By default, Helm uses the namespace your Kubernetes configuration file
+> sets as the default.
 
 ```sh
 $ helm list
@@ -155,16 +160,28 @@ helm uninstall --keep-history
 
 ## `template`
 
-- During `helm template`, Helm *never* contacts a remote Kubernetes server.
+- During `helm template`, Helm _never_ contacts a remote Kubernetes server.
 - The `template` command always acts like an installation.
-- Template functions and directives that would normally require contacting a Kubernetes server will instead only return default data.
+- Template functions and directives that would normally require contacting a
+  Kubernetes server will instead only return default data.
 - The chart only has access to default Kubernetes kinds.
 
-When Helm is compiled, it is compiled against a particular version of Kubernetes. The Kubernetes libraries contain the list of built-in kinds for that release. Helm uses that built-in list instead of a list it fetches from the API server. For this reason, Helm does not have access to any CRDs during a `helm template` run, since CRDs are installed on the cluster and are not included in the Kubernetes libraries.
+When Helm is compiled, it is compiled against a particular version of
+Kubernetes. The Kubernetes libraries contain the list of built-in kinds for that
+release. Helm uses that built-in list instead of a list it fetches from the API
+server. For this reason, Helm does not have access to any CRDs during a
+`helm template` run, since CRDs are installed on the cluster and are not
+included in the Kubernetes libraries.
 
-> NOTE: Running an old version of Helm against a chart that uses new kinds or versions can produce an error during `helm template` because Helm will not have the newest kinds or versions compiled into it.
+> NOTE: Running an old version of Helm against a chart that uses new kinds or
+> versions can produce an error during `helm template` because Helm will not
+> have the newest kinds or versions compiled into it.
 
-Because Helm does not contact a Kubernetes cluster during a helm template run, it does not do complete validation of the output. It is possible that Helm will not catch some errors in this case. You may choose to use the --validate flag if you want that behavior, but in this case Helm will need a valid kubeconfig file with credentials for a cluster.
+Because Helm does not contact a Kubernetes cluster during a helm template run,
+it does not do complete validation of the output. It is possible that Helm will
+not catch some errors in this case. You may choose to use the --validate flag if
+you want that behavior, but in this case Helm will need a valid kubeconfig file
+with credentials for a cluster.
 
 ```sh
 $ helm template mysite bitnami/drupal --values values.yaml --set \
@@ -193,19 +210,33 @@ type: Opaque
 
 ### Using a post-render instead of helm template
 
-Sometimes you want to intercept the YAML, modify it with your own tool, and then load it into Kubernetes. Helm provides a way to execute this external tool without having to resort to using `helm template`. The flag `--post-renderer` on the `install`, `upgrade`, `rollback`, and `template` will cause Helm to send the YAML data to the command, and then read the results back into Helm. This is a great way to work with tools like Kustomize.
+Sometimes you want to intercept the YAML, modify it with your own tool, and then
+load it into Kubernetes. Helm provides a way to execute this external tool
+without having to resort to using `helm template`. The flag `--post-renderer` on
+the `install`, `upgrade`, `rollback`, and `template` will cause Helm to send the
+YAML data to the command, and then read the results back into Helm. This is a
+great way to work with tools like Kustomize.
 
 ## Configuration at Install Time
 
-There are several ways of telling Helm which values you want to be configured. The best way is to create a YAML file with all of the configuration overrides.
+There are several ways of telling Helm which values you want to be configured.
+The best way is to create a YAML file with all of the configuration overrides.
 
 ### `values.yaml` file
 
 > NOTE: The filename does not need to be "values". This is just convention.
 
-Since it is in a file, it is easy to reproduce the same installation. You can also check this file into a version control system to track changes to your values over time. The Helm core maintainers consider it a good practice to keep your configuration values in a YAML file. It is important to keep in mind, though, that if a configuration file has sensitive information (like a password or authentication token), you should take steps to ensure that this information is not leaked.
+Since it is in a file, it is easy to reproduce the same installation. You can
+also check this file into a version control system to track changes to your
+values over time. The Helm core maintainers consider it a good practice to keep
+your configuration values in a YAML file. It is important to keep in mind,
+though, that if a configuration file has sensitive information (like a password
+or authentication token), you should take steps to ensure that this information
+is not leaked.
 
-> NOTE: You can specify the `--values` flag multiple times. Some people use this feature to have “common” overrides in one file and specific overrides in another.
+> NOTE: You can specify the `--values` flag multiple times. Some people use this
+> feature to have “common” overrides in one file and specific overrides in
+> another.
 
 ```sh
 $ helm install mysite bitnami/drupal --values values.yaml
@@ -233,9 +264,12 @@ NOTES:
 
 ### Imperative configuration
 
-This sets just one parameter, `drupalUsername`. This flag uses a simple `key=value` format.
+This sets just one parameter, `drupalUsername`. This flag uses a simple
+`key=value` format.
 
-> NOTE: Subsections are a little more complicated when using the `--set` flag. You will need to use a dotted notation: `--set mariadb.db.name=my-database`. This can get verbose when setting multiple values.
+> NOTE: Subsections are a little more complicated when using the `--set` flag.
+> You will need to use a dotted notation: `--set mariadb.db.name=my-database`.
+> This can get verbose when setting multiple values.
 
 ```sh
 helm install mysite bitnami/drupal --set drupalUsername=admin
@@ -243,7 +277,8 @@ helm install mysite bitnami/drupal --set drupalUsername=admin
 
 ## How Helm Stores Release Information
 
-By default, Helm stores these records as Kubernetes Secrets (though there are other supported storage backends).
+By default, Helm stores these records as Kubernetes Secrets (though there are
+other supported storage backends).
 
 We can see these records with `kubectl get secret`:
 
