@@ -90,6 +90,8 @@ v, ok := <-ch   // channel receive
   - `int32` (`rune`)
   - `int64`
 
+> Regardless of their size, `int`, `uint`, and `uintptr` are different types from their explicitly sized siblings. Thus `int` is not the same type as `int32`, even if the natural size of integers is 32 bits, and an explicit conversion is required to sue an `int` value where an `int32` is needed, and vice versa.
+
 ### Floating Point Types
 
 > <https://golang.org/ref/spec#Numeric_types>
