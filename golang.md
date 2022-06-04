@@ -39,6 +39,14 @@
 
 `go get -u=patch <module path>`
 
+## Tuple assignments
+
+```go
+v, ok := m[key] // map lookup
+v, ok := x.(T)  // type assertion
+v, ok := <-ch   // channel receive
+```
+
 ## Basic Types
 
 ### String Types
