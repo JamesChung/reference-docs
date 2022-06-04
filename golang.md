@@ -47,6 +47,15 @@ v, ok := x.(T)  // type assertion
 v, ok := <-ch   // channel receive
 ```
 
+## Package Initialization
+
+1. Dependencies
+2. Package level variables, if the package has multiple `.go` files, they are initialized in the order in which the files are given to the compiler; the `go` tool sorts `.go` files by name before invoking the compiler
+3. Each variable declared at package level starts life with the value of its initializer expression if any.
+4. `init()` function - Any file can contain any number of `init` functions, they are executed in the order in which they are declared.
+5. One package is initialized at a time, in the order of imports in the program, dependencies first.
+6. `main` package is the last to be initialized. All packages are fully initialized before the application's `main` function begins.
+
 ## Basic Types
 
 ### String Types
