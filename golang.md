@@ -65,6 +65,8 @@ v, ok := <-ch   // channel receive
 - `string`
 - `rune` (`int32`)
 
+> A `[]rune` conversion applied to a UTF-8 encoded string returns the sequence of Unicode code points that the string encodes.
+
 #### Formatting
 
 ```go
