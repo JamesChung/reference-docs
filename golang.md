@@ -291,6 +291,24 @@ func NewHTTPError(msg, metadata Metadata, code int) *HTTPError {
 }
 ```
 
+> Methods can be declared only on named types and pointers to them, but thanks to embedding, it's possible and sometimes useful for _unnamed_ struct types to have methods too. Because the `sync.Mutex` field is embedded within it, its `Lock` and `Unlock` methods are promoted to the unnamed struct type, allowing us to lock the `cache` with a self-explanatory syntax.
+
+```go
+var cache = struct {
+  sync.Mutex
+  mapping map[string]string
+} {
+  mapping: make(map[string]string),
+}
+
+func Lookup(key string) string {
+  cache.Lock()
+  v := cache.mapping[key]
+  cache.Unlock()
+  return v
+}
+```
+
 ### Embedding Interfaces
 
 Just like you can embed a type in a struct, you can also embed an interface in
