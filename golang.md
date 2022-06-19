@@ -1,8 +1,10 @@
 # Go Reference
 
-## Table of Contents
+## Table of contents
 
 - [Commands](#commands)
+- [Tuple assignments](#tuple-assignments)
+- [Package Initialization](#package-initialization)
 - [Basic Types](#basic-types)
   - [String Types](#string-types)
   - [Boolean Types](#boolean-types)
@@ -16,6 +18,8 @@
 - [Pointer Performance](#pointer-performance)
 - [Embedding](#embedding)
   - [Embedding Interfaces](#embedding-interfaces)
+- [Methods](#methods)
+- [Method Values and Expressions](#method-values-and-expressions)
 - [Interfaces](#interfaces)
   - [Type Assertions](#type-assertions)
   - [Type Switches](#type-switches)
@@ -68,6 +72,8 @@ v, ok := <-ch   // channel receive
 > A `[]rune` conversion applied to a UTF-8 encoded string returns the sequence of Unicode code points that the string encodes.
 
 #### Formatting
+
+Variable indexing
 
 ```go
 o := 0666
@@ -361,6 +367,41 @@ func main() {
   // err interface type uses underlying concrete *BaseError's Error() method
   err.Error()
 }
+```
+
+## Methods
+
+### Method Values and Expressions
+
+Usually we select and call a method in the same expression, as in `p.Distance()`, but it's possible to separate these two operations. The selector `p.Distance` yields a _method value_, a function that binds a method (`Point.Distance`) to a specific receiver value `p`. This function can then be invoked without a receiver value; it needs only the non-receiver arguments.
+
+```go
+p := Point{1, 2}
+q := Point{4, 6}
+
+distanceFromP := p.Distance   // Method value
+fmt.Println(distanceFromP(q)) // "5"
+
+scaleP := p.ScaleBy           // Method value
+scaleP(2)                     // p becomes (2, 4)
+scaleP(3)                     //      then (6, 12)
+scaleP(10)                    //      then (60, 120)
+```
+
+Related to the method value is the _method expression_. When calling a method, as opposed to an ordinary function, we must supply the receiver in a special way using the selector syntax. A method expression, written `T.f` or `(*T).f` where `T` is a type, yields a function value with a regular first parameter taking the place of the receiver, so it can be called in the usual way.
+
+```go
+p := Point{1, 2}
+q := Point{4, 6}
+
+distance := Point.Distance    // method expression
+fmt.Println(distance(p, q))   // "5"
+fmt.Printf("%T\n", distance)  // func(Point, Point) float64
+
+scale := (*Point).ScaleBy
+scale(&p, 2)
+fmt.Println(p)                // "{2, 4}"
+fmt.Printf("%T\n", scale)     // func(*Point, float64)
 ```
 
 ## Interfaces
