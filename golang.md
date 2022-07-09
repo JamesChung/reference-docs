@@ -51,6 +51,17 @@ v, ok := x.(T)  // type assertion
 v, ok := <-ch   // channel receive
 ```
 
+## Do While Loops
+
+```go
+for {
+    // things to do in the loop
+    if !CONDITION {
+        break
+    }
+}
+```
+
 ## Package Initialization
 
 1. Dependencies
@@ -236,7 +247,7 @@ instead of the heap. The size of a pointer type is also known, and it is also
 stored on the stack.
 
 The rules are more complicated when it comes to the data that the pointer points
-to. In order for Go to allocate the data the pointer points to on the stack,
+to. __In order for Go to allocate the data the pointer points to on the stack,
 several conditions must be true. It must be a local variable whose data size is
 known at compile time. The pointer cannot be returned from the function. If the
 pointer is passed into a function, the compiler must be able to ensure that
@@ -245,7 +256,7 @@ it by simply moving the stack pointer. If the pointer variable is returned, the
 memory that the pointer points to will no longer be valid when the function
 exits. When the compiler determines that the data can’t be stored on the stack,
 we say that the data the pointer points to escapes the stack and the compiler
-stores the data on the heap.
+stores the data on the heap.__
 
 The heap is the memory that’s managed by the garbage collector (or by hand in
 languages like C and C++). Any data that’s stored on the heap is valid as long
@@ -254,10 +265,11 @@ no more pointers pointing to that data (or to data that points to that data),
 the data becomes garbage and it’s the job of the garbage collector to clear it
 out.
 
-A common source of bugs in C programs is returning a pointer to a local
-variable. In C, this results in a pointer pointing to invalid memory. The Go
-compiler is smarter. When it sees that a pointer to a local variable is
-returned, the local variable’s value is stored on the heap.
+> A common source of bugs in C programs is returning a pointer to a local variable. In C, this results in a pointer pointing to invalid memory. The Go compiler is smarter. When it sees that a pointer to a local variable is returned, the local variable’s value is stored on the heap.
+
+The escape analysis done by the Go compiler isn’t perfect. There are some cases where data that could be stored on the stack escapes to the heap. However, the compiler has to be conservative; it can’t take the chance of leaving a value on the stack when it might need to be on the heap because leaving a reference to invalid data causes memory corruption.
+
+RAM might mean “random access memory,” but the fastest way to read from memory is to read it sequentially. A slice of structs in Go has all of the data laid out sequentially in memory. This makes it fast to load and fast to process. A slice of pointers to structs (or structs whose fields are pointers) has its data scattered across RAM, making it far slower to read and process.
 
 ## Embedding
 
