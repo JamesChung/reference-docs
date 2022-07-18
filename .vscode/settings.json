@@ -5,9 +5,18 @@
         "combinators",
         "doctest",
         "doctests",
+        "Errorf",
         "fsfreeze",
         "gcloud",
+        "Godoc",
+        "imag",
         "monomorphized",
-        "structs"
+        "noncomparable",
+        "Println",
+        "Sprintf",
+        "structs",
+        "subpackages",
+        "uintptr",
+        "unexported"
     ]
 }

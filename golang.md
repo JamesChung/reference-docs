@@ -1,39 +1,50 @@
 # Go Reference
 
-## Table of contents
+# Table of contents
 
-- [Commands](#commands)
-- [Tuple assignments](#tuple-assignments)
-- [Package Initialization](#package-initialization)
-- [Basic Types](#basic-types)
-  - [String Types](#string-types)
-  - [Boolean Types](#boolean-types)
-  - [Integer Types](#integer-types)
-  - [Floating Point Types](#floating-point-types)
-  - [Complex Types](#complex-types)
-- [Aggregate Types](#aggregate-types)
-- [Reference Types](#reference-types)
-- [Type Alias](#type-alias)
-- [Universe Block](#universe-block)
-- [Pointer Performance](#pointer-performance)
-- [Embedding](#embedding)
-  - [Embedding Interfaces](#embedding-interfaces)
-- [Methods](#methods)
-- [Method Values and Expressions](#method-values-and-expressions)
-- [Interfaces](#interfaces)
-  - [Type Assertions](#type-assertions)
-  - [Type Switches](#type-switches)
-  - [Function Types](#function-types)
-- [Errors](#errors)
-  - [Sentinel Errors](#sentinel-errors)
-  - [Custom Errors](#custom-errors)
-  - [Wrapping Errors](#wrapping-errors)
-  - [Recover](#recover)
-- [Modules and Packages](#modules-and-packages)
-  - [Godoc](#godoc)
-  - [The `internal` Package](#the-internal-package)
-  - [The `init` Function](#the-init-function)
-  - [Versioning](#versioning)
+- [Go Reference](#go-reference)
+  - [Table of contents](#table-of-contents)
+  - [Commands](#commands)
+  - [Tuple assignments](#tuple-assignments)
+  - [Do While Loops](#do-while-loops)
+  - [iota](#iota)
+  - [Package Initialization](#package-initialization)
+  - [Basic Types](#basic-types)
+    - [String Types](#string-types)
+      - [Formatting](#formatting)
+    - [Boolean Types](#boolean-types)
+    - [Integer Types](#integer-types)
+    - [Floating Point Types](#floating-point-types)
+    - [Complex Types](#complex-types)
+  - [Aggregate Types](#aggregate-types)
+  - [Reference Types](#reference-types)
+  - [Type Alias](#type-alias)
+  - [Universe Block](#universe-block)
+  - [Pointer Performance](#pointer-performance)
+  - [Embedding](#embedding)
+    - [Embedding Interfaces](#embedding-interfaces)
+  - [Methods](#methods)
+    - [Method Values and Expressions](#method-values-and-expressions)
+  - [Interfaces](#interfaces)
+    - [Type Assertions](#type-assertions)
+      - [The comma ok Idiom](#the-comma-ok-idiom)
+    - [Type Switches](#type-switches)
+    - [Type Assertions](#type-assertions)
+    - [Function Types](#function-types)
+  - [Errors](#errors)
+    - [Sentinel Errors](#sentinel-errors)
+    - [Custom Errors](#custom-errors)
+    - [Wrapping Errors](#wrapping-errors)
+      - [Unwrap](#unwrap)
+      - [Is and As](#is-and-as)
+        - [Is](#is)
+        - [As](#as)
+    - [Recover](#recover)
+  - [Modules and Packages](#modules-and-packages)
+    - [Godoc](#godoc)
+    - [The `internal` Package](#the-internal-package)
+    - [The `init` Function](#the-init-function)
+    - [Versioning](#versioning)
 
 ## Commands
 
@@ -62,14 +73,30 @@ for {
 }
 ```
 
+## iota
+
+_Don’t use iota for defining constants where its values are explicitly defined
+(elsewhere). For example, when implementing parts of a specification and the
+specification says which values are assigned to which constants, you should
+explicitly write the constant values. Use iota for “internal” purposes only.
+That is, where the constants are referred to by name rather than by value. That
+way you can optimally enjoy iota by inserting new constants at any moment in
+time / location in the list without the risk of breaking everything._
+
 ## Package Initialization
 
 1. Dependencies
-2. Package level variables, if the package has multiple `.go` files, they are initialized in the order in which the files are given to the compiler; the `go` tool sorts `.go` files by name before invoking the compiler
-3. Each variable declared at package level starts life with the value of its initializer expression if any.
-4. `init()` function - Any file can contain any number of `init` functions, they are executed in the order in which they are declared.
-5. One package is initialized at a time, in the order of imports in the program, dependencies first.
-6. `main` package is the last to be initialized. All packages are fully initialized before the application's `main` function begins.
+2. Package level variables, if the package has multiple `.go` files, they are
+   initialized in the order in which the files are given to the compiler; the
+   `go` tool sorts `.go` files by name before invoking the compiler
+3. Each variable declared at package level starts life with the value of its
+   initializer expression if any.
+4. `init()` function - Any file can contain any number of `init` functions, they
+   are executed in the order in which they are declared.
+5. One package is initialized at a time, in the order of imports in the program,
+   dependencies first.
+6. `main` package is the last to be initialized. All packages are fully
+   initialized before the application's `main` function begins.
 
 ## Basic Types
 
@@ -80,7 +107,8 @@ for {
 - `string`
 - `rune` (`int32`)
 
-> A `[]rune` conversion applied to a UTF-8 encoded string returns the sequence of Unicode code points that the string encodes.
+> A `[]rune` conversion applied to a UTF-8 encoded string returns the sequence
+> of Unicode code points that the string encodes.
 
 #### Formatting
 
@@ -120,7 +148,11 @@ fmt.Printf("%d %[1]x %#[1]x %#[1]X\n", x)
   - `int32` (`rune`)
   - `int64`
 
-> Regardless of their size, `int`, `uint`, and `uintptr` are different types from their explicitly sized siblings. Thus `int` is not the same type as `int32`, even if the natural size of integers is 32 bits, and an explicit conversion is required to sue an `int` value where an `int32` is needed, and vice versa.
+> Regardless of their size, `int`, `uint`, and `uintptr` are different types
+> from their explicitly sized siblings. Thus `int` is not the same type as
+> `int32`, even if the natural size of integers is 32 bits, and an explicit
+> conversion is required to sue an `int` value where an `int32` is needed, and
+> vice versa.
 
 ### Floating Point Types
 
@@ -247,7 +279,7 @@ instead of the heap. The size of a pointer type is also known, and it is also
 stored on the stack.
 
 The rules are more complicated when it comes to the data that the pointer points
-to. __In order for Go to allocate the data the pointer points to on the stack,
+to. **In order for Go to allocate the data the pointer points to on the stack,
 several conditions must be true. It must be a local variable whose data size is
 known at compile time. The pointer cannot be returned from the function. If the
 pointer is passed into a function, the compiler must be able to ensure that
@@ -256,7 +288,7 @@ it by simply moving the stack pointer. If the pointer variable is returned, the
 memory that the pointer points to will no longer be valid when the function
 exits. When the compiler determines that the data can’t be stored on the stack,
 we say that the data the pointer points to escapes the stack and the compiler
-stores the data on the heap.__
+stores the data on the heap.**
 
 The heap is the memory that’s managed by the garbage collector (or by hand in
 languages like C and C++). Any data that’s stored on the heap is valid as long
@@ -265,11 +297,22 @@ no more pointers pointing to that data (or to data that points to that data),
 the data becomes garbage and it’s the job of the garbage collector to clear it
 out.
 
-> A common source of bugs in C programs is returning a pointer to a local variable. In C, this results in a pointer pointing to invalid memory. The Go compiler is smarter. When it sees that a pointer to a local variable is returned, the local variable’s value is stored on the heap.
+> A common source of bugs in C programs is returning a pointer to a local
+> variable. In C, this results in a pointer pointing to invalid memory. The Go
+> compiler is smarter. When it sees that a pointer to a local variable is
+> returned, the local variable’s value is stored on the heap.
 
-The escape analysis done by the Go compiler isn’t perfect. There are some cases where data that could be stored on the stack escapes to the heap. However, the compiler has to be conservative; it can’t take the chance of leaving a value on the stack when it might need to be on the heap because leaving a reference to invalid data causes memory corruption.
+The escape analysis done by the Go compiler isn’t perfect. There are some cases
+where data that could be stored on the stack escapes to the heap. However, the
+compiler has to be conservative; it can’t take the chance of leaving a value on
+the stack when it might need to be on the heap because leaving a reference to
+invalid data causes memory corruption.
 
-RAM might mean “random access memory,” but the fastest way to read from memory is to read it sequentially. A slice of structs in Go has all of the data laid out sequentially in memory. This makes it fast to load and fast to process. A slice of pointers to structs (or structs whose fields are pointers) has its data scattered across RAM, making it far slower to read and process.
+RAM might mean “random access memory,” but the fastest way to read from memory
+is to read it sequentially. A slice of structs in Go has all of the data laid
+out sequentially in memory. This makes it fast to load and fast to process. A
+slice of pointers to structs (or structs whose fields are pointers) has its data
+scattered across RAM, making it far slower to read and process.
 
 ## Embedding
 
@@ -309,7 +352,11 @@ func NewHTTPError(msg, metadata Metadata, code int) *HTTPError {
 }
 ```
 
-> Methods can be declared only on named types and pointers to them, but thanks to embedding, it's possible and sometimes useful for _unnamed_ struct types to have methods too. Because the `sync.Mutex` field is embedded within it, its `Lock` and `Unlock` methods are promoted to the unnamed struct type, allowing us to lock the `cache` with a self-explanatory syntax.
+> Methods can be declared only on named types and pointers to them, but thanks
+> to embedding, it's possible and sometimes useful for _unnamed_ struct types to
+> have methods too. Because the `sync.Mutex` field is embedded within it, its
+> `Lock` and `Unlock` methods are promoted to the unnamed struct type, allowing
+> us to lock the `cache` with a self-explanatory syntax.
 
 ```go
 var cache = struct {
@@ -372,7 +419,7 @@ func main() {
   }
   // err can be assigned baseError because *BaseError implicitly implements the error interface
   err = baseError
-  // because error is embeded, the Error() method can be implicitly used
+  // because error is embedded, the Error() method can be implicitly used
   baseError.Error()
   // explicitly invoked via the error field instead
   baseError.error.baseError()
@@ -385,7 +432,11 @@ func main() {
 
 ### Method Values and Expressions
 
-Usually we select and call a method in the same expression, as in `p.Distance()`, but it's possible to separate these two operations. The selector `p.Distance` yields a _method value_, a function that binds a method (`Point.Distance`) to a specific receiver value `p`. This function can then be invoked without a receiver value; it needs only the non-receiver arguments.
+Usually we select and call a method in the same expression, as in
+`p.Distance()`, but it's possible to separate these two operations. The selector
+`p.Distance` yields a _method value_, a function that binds a method
+(`Point.Distance`) to a specific receiver value `p`. This function can then be
+invoked without a receiver value; it needs only the non-receiver arguments.
 
 ```go
 p := Point{1, 2}
@@ -400,7 +451,11 @@ scaleP(3)                     //      then (6, 12)
 scaleP(10)                    //      then (60, 120)
 ```
 
-Related to the method value is the _method expression_. When calling a method, as opposed to an ordinary function, we must supply the receiver in a special way using the selector syntax. A method expression, written `T.f` or `(*T).f` where `T` is a type, yields a function value with a regular first parameter taking the place of the receiver, so it can be called in the usual way.
+Related to the method value is the _method expression_. When calling a method,
+as opposed to an ordinary function, we must supply the receiver in a special way
+using the selector syntax. A method expression, written `T.f` or `(*T).f` where
+`T` is a type, yields a function value with a regular first parameter taking the
+place of the receiver, so it can be called in the usual way.
 
 ```go
 p := Point{1, 2}
@@ -426,14 +481,23 @@ fmt.Printf("%T\n", scale)     // func(*Point, float64)
 - Rather than writing a single factory function that returns different instances
   behind an interface based on input parameters, try to write separate factory
   functions for each concrete type.
-- when invoking a function with parameters of interface types, a heap allocation
+- When invoking a function with parameters of interface types, a heap allocation
   occurs for each of the interface parameters.
+  - Figuring out the trade-off between better abstraction and better performance
+    is something that should be done over the life of your program. Write your
+    code so that it is readable and maintainable. If you find that your program
+    is too slow and you have profiled it and you have determined that the
+    performance problems are due to a heap allocation caused by an interface
+    parameter, then you should rewrite the function to use a concrete type
+    parameter.
 - In order for an interface to be considered nil both the type and the value
   must be nil.
 - In the Go runtime, interfaces are implemented as a pair of pointers, one to
   the underlying type and one to the underlying value. As long as the type is
   non-nil, the interface is non-nil. (Since you cannot have a variable without a
   type, if the value pointer is non-nil, the type pointer is always non-nil.)
+  - What nil indicates for an interface is whether or not you can invoke methods
+    on it.
 - If an interface is nil, invoking any methods on it triggers a panic
 
 ### Type Assertions
@@ -463,15 +527,21 @@ _**Note:**_ If you list more than one type on a case, the new variable is of
 type `interface{}`.
 
 ```go
-switch val := i.(type) {
-case nil:
-  // i is nil, type of val is interface{}
-case int:
-  // val is of type int
-case string:
-  // val is of type string
-default:
-  // no idea what i is, val is defaulted to type interface{}
+switch j := i.(type) {
+    case nil:
+        // i is nil, type of j is interface{}
+    case int:
+        // j is of type int
+    case MyInt:
+        // j is of type MyInt
+    case io.Reader:
+        // j is of type io.Reader
+    case string:
+        // j is a string
+    case bool, rune:
+        // i is either a bool or rune, so j is of type interface{}
+    default:
+        // no idea what i is, so j is of type interface{}
 }
 ```
 
@@ -482,6 +552,77 @@ one, it is idiomatic to assign the variable being switched on to a variable of
 the same name `(i := i.(type))`, making this one of the few places where
 shadowing is a good idea. To make the comments more readable, our example
 doesn’t use shadowing.
+
+The type of the new variable depends on which case matches. You can use `nil`
+for one case to see if the interface has no associated type. If you list more
+than one type on a case, the new variable is of type `interface{}`.
+
+While it might seem handy to be able to extract the concrete implementation from
+an interface variable, you should use these techniques infrequently. For the
+most part, treat a parameter or return value as the type that was supplied and
+not what else it could be. Otherwise, your function’s API isn’t accurately
+declaring what types it needs to perform its task. If you needed a different
+type, then it should be specified.
+
+### Type Assertions
+
+One common use of a type assertion is to see if the concrete type behind the
+interface also implements another interface.
+
+```go
+// copyBuffer is the actual implementation of Copy and CopyBuffer.
+// if buf is nil, one is allocated.
+func copyBuffer(dst Writer, src Reader, buf []byte) (written int64, err error) {
+    // If the reader has a WriteTo method, use it to do the copy.
+    // Avoids an allocation and a copy.
+    if wt, ok := src.(WriterTo); ok {
+        return wt.WriteTo(dst)
+    }
+    // Similarly, if the writer has a ReadFrom method, use it to do the copy.
+    if rt, ok := dst.(ReaderFrom); ok {
+        return rt.ReadFrom(src)
+    }
+    // function continues...
+}
+```
+
+---
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Dog interface {
+	Bark() string
+}
+
+type Person struct {
+	Name string
+}
+
+func (p Person) String() string {
+	return p.Name
+}
+
+func (p Person) Bark() string {
+	return "Bark!"
+}
+
+func main() {
+	fmt.Println("Start...")
+	var blah fmt.Stringer
+	blah = Person{
+		Name: "Jack",
+	}
+	if t, ok := blah.(Dog); ok {
+		fmt.Println("blah also implements Animal", t)
+	}
+	fmt.Println("Done...")
+}
+```
 
 ### Function Types
 
@@ -841,13 +982,17 @@ allows you to define multiple.
 
 Go supports two ways for creating the different import paths:
 
-- Create a subdirectory within your module named vN, where N is the major
+- Create a subdirectory within your module named _vN_, where _N_ is the major
   version of your module. For example, if you are creating version 2 of your
-  module, call this directory v2. Copy your code into this subdirectory,
-  including the README and LICENSE files.
+  module, call this directory _v2_. Copy your code into this subdirectory,
+  including the _README_ and _LICENSE_ files.
 
 - Create a branch in your version control system. You can either put the old
-  code on the branch or the new code. Name the branch vN if you are putting the
-  new code on the branch, or vN-1 if you are putting the old code there. For
-  example, if you are creating version 2 of your module and want to put version
-  1 code on the branch, name the branch v1.
+  code on the branch or the new code. Name the branch _vN_ if you are putting
+  the new code on the branch, or _vN-1_ if you are putting the old code there.
+  For example, if you are creating version 2 of your module and want to put
+  version 1 code on the branch, name the branch _v1_.
+
+When upgrading a major version you can use
+[mod](https://github.com/marwan-at-work/mod) to automate the renaming process of
+packages.
