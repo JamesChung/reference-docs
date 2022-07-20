@@ -996,3 +996,189 @@ Go supports two ways for creating the different import paths:
 When upgrading a major version you can use
 [mod](https://github.com/marwan-at-work/mod) to automate the renaming process of
 packages.
+
+### Goroutines
+
+1. A process is an instance of a program that’s being run by a computer’s operating system.
+2. The operating system associates some resources, such as memory, with the process and makes sure that other processes can’t access them.
+3. A process is composed of one or more threads.
+4. A thread is a unit of execution that is given some time to run by the operating system.
+5. Threads within a process share access to resources.
+6. A CPU can execute instructions from one or more threads at the same time, depending on the number of cores.
+7. One of the jobs of an operating system is to schedule threads on the CPU to make sure that every process (and every thread within a process) gets a chance to run.
+
+Goroutines are lightweight processes managed by the Go runtime. When a Go program starts, the Go runtime creates a number of threads and launches a single goroutine to run your program. All of the goroutines created by your program, including the initial one, are assigned to these threads automatically by the Go runtime scheduler, just as the operating system schedules threads across CPU cores. This might seem like extra work, since the underlying operating system already includes a scheduler that manages threads and processes, but it has several benefits:
+
+- Goroutine creation is faster than thread creation, because you aren’t creating an operating system–level resource.
+- Goroutine initial stack sizes are smaller than thread stack sizes and can grow as needed. This makes goroutines more memory efficient.
+- Switching between goroutines is faster than switching between threads because it happens entirely within the process, avoiding operating system calls that are (relatively) slow.
+- The scheduler is able to optimize its decisions because it is part of the Go process. The scheduler works with the network poller, detecting when a goroutine can be unscheduled because it is blocking on I/O. It also integrates with the garbage collector, making sure that work is properly balanced across all of the operating system threads assigned to your Go process.
+
+### Channels
+
+Goroutines communicate using _channels_. Like slices and maps, channels are a built-in type created using the `make` function:
+
+```go
+ch := make(chan int)
+```
+
+Like maps, channels are reference types. When you pass a channel to a function, you are really passing a pointer to the channel. Also like maps and slices, the zero value for a channel is `nil`.
+
+#### Reading, Writing, and Buffering
+
+Use the `<-` operator to interact with a channel. You read from a channel by placing the `<-` operator to the left of the channel variable, and you write to a channel by placing it to the right:
+
+```go
+a := <-ch   // reads a value from ch and assigns it to a
+ch <- b     // write the value in b to ch
+```
+
+Each value written to a channel can only be read once. If multiple goroutines are reading from the same channel, a value written to the channel will only be read by one of them.
+
+### Concurrency Practices and Patterns
+
+#### Keep your APIs Concurrency-Free
+
+Concurrency is an implementation detail, and good API design should hide implementation details as much as possible. This allows you to change how your code works without changing how your code is invoked.
+
+Practically, this means that you should never expose channels or mutexes in your API’s types, functions, and methods. If you expose a channel, you put the responsibility of channel management on the users of your API. This means that the users now have to worry about concerns like whether or not a channel is buffered or closed or `nil`. They can also trigger deadlocks by accessing channels or mutexes in an unexpected order.
+
+> This doesn’t mean that you shouldn’t ever have channels as function parameters or struct fields. It means that they shouldn’t be exported.
+
+There are some exceptions to this rule. If your API is a library with a concurrency helper function, channels are going to be part of its API.
+
+#### The Done Channel Pattern
+
+The done channel pattern provides a way to signal a goroutine that it’s time to stop processing. It uses a channel to signal that it’s time to exit. Let’s look at an example where we pass the same data to multiple functions, but only want the result from the fastest function:
+
+```go
+func searchData(s string, searchers []func(string) []string) []string {
+    done := make(chan struct{})
+    result := make(chan []string)
+    for _, searcher := range searchers {
+        go func(searcher func(string) []string) {
+            select {
+            case result <- searcher(s):
+            case <-done:
+            }
+        }(searcher)
+    }
+    r := <-result
+    close(done)
+    return r
+}
+```
+
+In our function, we declare a channel named `done` that contains data of type `struct{}`. We use an empty struct for the type because the value is unimportant; we never write to this channel, only close it. We launch a goroutine for each searcher passed in. The `select` statements in the worker goroutines wait for either a write on the `result` channel (when the `searcher` function returns) or a read on the `done` channel. Remember that a read on an open channel pauses until there is data available and that a read on a closed channel always returns the zero value for the channel. This means that the case that reads from `done` will stay paused until `done` is closed. In `searchData`, we read the first value written to `result`, and then we close `done`. This signals to the goroutines that they should exit, preventing them from leaking.
+
+#### Using a Cancel Function to Terminate a Goroutine
+
+```go
+func countTo(max int) (<-chan int, func()) {
+    ch := make(chan int)
+    done := make(chan struct{})
+    cancel := func() {
+        close(done)
+    }
+    go func() {
+        for i := 0; i < max; i++ {
+            select {
+            case <-done:
+                return
+            case ch<-i:
+
+            }
+        }
+        close(ch)
+    }()
+    return ch, cancel
+}
+
+func main() {
+    ch, cancel := countTo(10)
+    for i := range ch {
+        if i > 5 {
+            break
+        }
+        fmt.Println(i)
+    }
+    cancel()
+}
+```
+
+#### Turning Off a case in a select
+
+When you need to combine data from multiple concurrent sources, the `select` keyword is great. However, you need to properly handle closed channels. If one of the cases in a `select` is reading a closed channel, it will always be successful, returning the zero value. Every time that case is selected, you need to check to make sure that the value is valid and skip the case. If reads are spaced out, your program is going to waste a lot of time reading junk values.
+
+When that happens, we rely on something that looks like an error: reading a `nil` channel. As we saw earlier, reading from or writing to a `nil` channel causes your code to hang forever. While that is bad if it is triggered by a bug, you can use a `nil` channel to disable a `case` in a `select`. When you detect that a channel has been closed, set the channel’s variable to `nil`. The associated case will no longer run, because the read from the `nil` channel never returns a value:
+
+```go
+// in and in2 are channels, done is a done channel.
+for {
+    select {
+    case v, ok := <-in:
+        if !ok {
+            in = nil // the case will never succeed again!
+            continue
+        }
+        // process the v that was read from in
+    case v, ok := <-in2:
+        if !ok {
+            in2 = nil // the case will never succeed again!
+            continue
+        }
+        // process the v that was read from in2
+    case <-done:
+        return
+    }
+}
+```
+
+#### Running Code Exactly Once
+
+Declaring a `sync.Once` instance inside a function is usually the wrong thing to do, as a new instance will be created on every function call and there will be no memory of previous invocations.
+
+In our example, we want to make sure that parser is only initialized once, so we set the value of parser from within a closure that’s passed to the Do method on once. If Parse is called more than once, once.Do will not execute the closure again.
+
+```go
+type SlowComplicatedParser interface {
+    Parse(string) string
+}
+
+var parser SlowComplicatedParser
+var once sync.Once
+
+func Parse(dataToParse string) string {
+    once.Do(func() {
+        parser = initParser()
+    })
+    return parser.Parse(dataToParse)
+}
+
+func initParser() SlowComplicatedParser {
+    // do all sorts of setup and loading here
+}
+```
+
+#### Channels or Mutexes
+
+- If you are coordinating goroutines or tracking a value as it is transformed by a series of goroutines, use channels.
+- If you are sharing access to a field in a struct, use mutexes.
+- If you discover a critical performance issue when using channels (via Benchmarking), and you cannot find any other way to fix the issue, modify your code to use a mutex.
+
+Mutexes in Go aren’t reentrant. If a goroutine tries to acquire the same lock twice, it deadlocks, waiting for itself to release the lock. This is different from languages like Java, where locks are reentrant.
+
+Nonreentrant locks make it tricky to acquire a lock in a function that calls itself recursively. You must release the lock before the recursive function call. In general, be careful when holding a lock while making a function call, because you don’t know what locks are going to be acquired in those calls. If your function calls another function that tries to acquire the same mutex lock, the goroutine deadlocks.
+
+Like `sync.WaitGroup` and `sync.Once`, mutexes must never be copied. If they are passed to a function or accessed as a field on a struct, it must be via a pointer. If a mutex is copied, its lock won’t be shared.
+
+##### sync.Map - This is not the map you are looking for
+
+When looking through the `sync` package, you’ll find a type called `Map`. It provides a concurrency-safe version of Go’s built-in `map`. Due to trade-offs in its implementation, `sync.Map` is only appropriate in very specific situations:
+
+- When you have a shared `map` where key/value pairs are inserted once and read many times
+- When goroutines share the `map`, but don’t access each other’s keys and values
+
+Furthermore, because of the current lack of generics in Go, `sync.Map` uses `interface{}` as the type for its keys and values; the compiler cannot help you ensure that the right data types are used.
+
+Given these limitations, in the rare situations where you need to share a map across multiple goroutines, use a built-in map protected by a `sync.RWMutex`.
