@@ -1182,3 +1182,369 @@ When looking through the `sync` package, you’ll find a type called `Map`. It p
 Furthermore, because of the current lack of generics in Go, `sync.Map` uses `interface{}` as the type for its keys and values; the compiler cannot help you ensure that the right data types are used.
 
 Given these limitations, in the rare situations where you need to share a map across multiple goroutines, use a built-in map protected by a `sync.RWMutex`.
+
+## Testing
+
+> adder/adder.go
+```go
+func addNumbers(x, y int) int {
+    return x + y
+}
+```
+
+> adder.adder_test.go
+```go
+func Test_addNumbers(t *testing.T) {
+    result := addNumbers(2, 3)
+    if result != 5 {
+        t.Error("incorrect result: expected 5, got", result)
+    }
+}
+```
+
+Every test is written in a file whose name ends with *_test.go*. If you are writing tests against _foo.go_, place your tests in a file named *foo_test.go*.
+
+- Test functions start with the word `Test` and take in a single parameter of type `*testing.T`.
+- When writing unit tests for individual functions, the convention is to name the unit test `Test` followed by the name of the function. When testing unexported functions, some people use an underscore between the word `Test` and the name of the function.
+
+The `go test` command allows you to specify which packages to test. Using `./...` for the package name specifies that you want to run tests in the current directory and all of the subdirectories of the current directory. Include a `-v` flag to get verbose testing output.
+
+```sh-session
+$ go test
+PASS
+ok      test_examples/adder     0.006s
+```
+
+### Reporting Test Failures
+
+```go
+t.Errorf("incorrect result: expected %d, got %d", 5, result)
+```
+
+While `Error()` and `Errorf()` make a test as failed, the test function continues running. If you think a test function should stop processing as soon as a failure is found, use the `Fatal()` and `Fatalf` methods.
+
+The `Fatal` method works like `Error`, and the `Fatalf` method works like `Errorf`. The difference is that the test function exits immediately after the test failure message is generated.
+
+> Note that this doesn't exit _all_ tests; any remaining test functions will execute after the current test function exits.
+
+**When should you use `Fatal`/`Fatalf` and when should you use `Error`/`Errorf`?**
+
+If the failure of a check in a test means that further checks in the same test function will always fail or cause the test to panic, use `Fatal` or `Fatalf`. If you are testing several independent items (such as validating fields in a `struct`), then use `Error` or `Errorf` so you can report as many problems at once. This makes it easier to fix multiple problems without rerunning your tests over and over.
+
+### Setting Up and Tearing Down
+
+Sometimes you have some common state that you want to set up before any tests run and remove when testing is complete. Use a `TestMain` function to manage this state and run your tests:
+
+```go
+var testTime time.Time
+
+func TestMain(m *testing.M) {
+    fmt.Println("Set up stuff for tests here")
+    testTime = time.Now()
+    exitVal := m.Run()
+    fmt.Println("Clean up stuff after tests here")
+    os.Exit(exitVal)
+}
+
+func TestFirst(t *testing.T) {
+    fmt.Println("TestFirst uses stuff set up in TestMain", testTime)
+}
+
+func TestSecond(t *testing.T) {
+    fmt.Println("TestSecond also uses stuff set up in TestMain", testTime)
+}
+```
+
+Both `TestFirst` and `TestSecond` refer to the package-level variable `testTime`. We declare a function called `TestMain` with a parameter of type `*testing.M`. Running `go test` on a package with a `TestMain` function calls the function instead of invoking the tests directly. Once the state is configured, call the `Run` method on `*testing.M` to run the test functions. The `Run` method returns the exit code; 0 indicates that all tests passed. Finally, you must call `os.Exit` with the exit code returned from `Run`.
+
+**Be aware that `TestMain` is invoked once, not before and after each individual test. Also be aware that you can have only one `TestMain` per package.**
+
+There are two common situations where `TestMain` is useful:
+- When you need to set up data in an external repository, such as a database
+- When the code being tested depends on package-level variables that need to be initialized
+
+#### Cleanup
+
+The `Cleanup` method on `*testing.T` is used to clean up temporary resources created for a single test. This method has a single parameter, a function with no input parameters or return values. The function runs when the test completes. For simple tests, you can achieve the same result by using a `defer` statement, but `Cleanup` is useful when tests rely on helper functions to set up sample data.
+
+```go
+// createFile is a helper function called from multiple tests
+func createFile(t *testing.T) (string, error) {
+    f, err := os.Create("tempFile")
+    if err != nil {
+        return "", err
+    }
+    // write some data to f
+    t.Cleanup(func() {
+        os.Remove(f.Name())
+    })
+    return f.Name(), nil
+}
+
+func TestFileProcessing(t *testing.T) {
+    fName, err := createFile(t)
+    if err != nil {
+        t.Fatal(err)
+    }
+    // do testing, don't worry about cleanup
+}
+```
+
+### Storing Sample Test Data
+
+As `go test` walks your source code tree, it uses the current package directory as the current working directory. If you want to use sample data to test functions in a package, create a subdirectory named `testdata` to hold your files. Go reserves this directory name as a place to hold test files. When reading from `testdata`, always use a relative file reference. Since `go test` changes the current working directory to the current package, each package accesses its own `testdata` via a relative file path.
+
+```sh-session
+text/
+  - testdata/
+    - sample1.txt
+  - text.go
+  - text_test.go
+```
+
+```go
+package text
+
+import "testing"
+
+func TestCountCharacters(t *testing.T) {
+	total, err := CountCharacters("testdata/sample1.txt")
+	if err != nil {
+		t.Error("Unexpected error:", err)
+	}
+	if total != 35 {
+		t.Error("Expected 35, got", total)
+	}
+	_, err = CountCharacters("testdata/no_file.txt")
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}
+```
+
+### Testing Your Public API
+
+If you want to test just the public API of your package, Go has a convention for specifying this. You still keep your test source code in the same directory as the production source code, but you use `packagename_test` for the package name. Let’s redo our initial test case, using an exported function instead. If we have the following function in the `adder` package:
+
+```go
+func AddNumbers(x, y int) int {
+    return x + y
+}
+```
+
+then we can test it as public API using the following code in a file in the `adder` package named `adder_public_test.go`:
+
+```go
+package adder_test
+
+import (
+    "testing"
+    "<FQDN of module>/adder"
+)
+
+func TestAddNumbers(t *testing.T) {
+    result := adder.AddNumbers(2, 3)
+    if result != 5 {
+        t.Error("incorrect result: expected 5, got", result)
+    }
+}
+```
+
+Notice that the package name for our test file is `adder_test`. We have to import `test_examples/adder` even though the files are in the same directory. To follow the convention for naming tests, the test function name matches the name of the `AddNumbers` function. Also note that we use `adder.AddNumbers`, since we are calling an exported function in a different package.
+
+Just as you can call exported functions from within a package, you can test your public API from a test that is in the same package as your source code. The advantage of using the `_test` package suffix is that it lets you treat your package as a “black box”; you are forced to interact with it only via its exported functions, methods, types, constants, and variables. Also be aware that you can have test source files with both package names intermixed in the same source directory.
+
+### Use go-cmp to Compare Test Results
+
+It can be verbose to write a thorough comparison between two instances of a compound type. While you can use `reflect.DeepEqual` to compare structs, maps, and slices, there’s a better way. Google released a third-party [module](https://github.com/google/go-cmp) called `go-cmp` that does the comparison for you and returns a detailed description of what does not match.
+
+```go
+type Person struct {
+    Name      string
+    Age       int
+    DateAdded time.Time
+}
+
+func CreatePerson(name string, age int) Person {
+    return Person{
+        Name:      name,
+        Age:       age,
+        DateAdded: time.Now(),
+    }
+}
+```
+
+In our test file, we need to import `github.com/google/go-cmp/cmp`, and our test function looks like this:
+
+```go
+func TestCreatePerson(t *testing.T) {
+    expected := Person{
+        Name: "Dennis",
+        Age:  37,
+    }
+    result := CreatePerson("Dennis", 37)
+    if diff := cmp.Diff(expected, result); diff != "" {
+        t.Error(diff)
+    }
+}
+```
+
+The `cmp.Diff` function takes in the expected output and the output that was returned by the function that we’re testing. It returns a string that describes any mismatches between the two inputs. If the inputs match, it returns an empty string. We assign the output of the `cmp.Diff` function to a variable called `diff` and then check to see if `diff` is an empty string. If it is not, an error occurred.
+
+```go
+$ go test
+--- FAIL: TestCreatePerson (0.00s)
+    ch13_cmp_test.go:16:   ch13_cmp.Person{
+              Name:      "Dennis",
+              Age:       37,
+        -     DateAdded: s"0001-01-01 00:00:00 +0000 UTC",
+        +     DateAdded: s"2020-03-01 22:53:58.087229 -0500 EST m=+0.001242842",
+          }
+
+FAIL
+FAIL    ch13_cmp    0.006s
+```
+
+The lines with a - and + indicate the fields whose values differ. Our test failed because our dates didn’t match. This is a problem because we can’t control what date is assigned by the `CreatePerson` function. We have to ignore the `DateAdded` field. You do that by specifying a comparator function. Declare the function as a local variable in your test:
+
+```go
+comparer := cmp.Comparer(func(x, y Person) bool {
+    return x.Name == y.Name && x.Age == y.Age
+})
+```
+
+Pass a function to the `cmp.Comparer` function to create a customer comparator. The function that’s passed in must have two parameters of the same type and return a `bool`. It also must be symmetric (the order of the parameters doesn’t matter), deterministic (it always returns the same value for the same inputs), and pure (it must not modify its parameters). In our implementation, we are comparing the `Name` and `Age` fields and ignoring the `DateAdded` field.
+
+Then change your call to `cmp.Diff` to include comparer:
+
+```go
+if diff := cmp.Diff(expected, result, comparer); diff != "" {
+    t.Error(diff)
+}
+```
+
+### Table Tests
+
+```go
+data := []struct {
+    name     string
+    num1     int
+    num2     int
+    op       string
+    expected int
+    errMsg   string
+}{
+    {"addition", 2, 2, "+", 4, ""},
+    {"subtraction", 2, 2, "-", 0, ""},
+    {"multiplication", 2, 2, "*", 4, ""},
+    {"division", 2, 2, "/", 1, ""},
+    {"bad_division", 2, 0, "/", 0, `division by zero`},
+}
+```
+
+We pass two parameters to `Run`, a name for the subtest and a function with a single parameter of type `*testing.T`. Inside the function, we call `DoMath` using the fields of the current entry in `data`, using the same logic over and over. When you run these tests, you’ll see that not only do they pass, but when you use the `-v` flag, each subtest also now has a name:
+
+```go
+for _, d := range data {
+    t.Run(d.name, func(t *testing.T) {
+        result, err := DoMath(d.num1, d.num2, d.op)
+        if result != d.expected {
+            t.Errorf("Expected %d, got %d", d.expected, result)
+        }
+        var errMsg string
+        if err != nil {
+            errMsg = err.Error()
+        }
+        if errMsg != d.errMsg {
+            t.Errorf("Expected error message `%s`, got `%s`",
+                d.errMsg, errMsg)
+        }
+    })
+}
+```
+
+### Checking Your Code Coverage
+
+Adding the `-cover` flag to the `go test` command calculates coverage information and includes a summary in the test output. If you include a second flag `-coverprofile`, you can save the coverage information to a file:
+
+```sh-session
+go test -v -cover -coverprofile=c.out
+```
+
+The `cover` tool included with Go generates an HTML representation of your source code with that information:
+
+```sh-session
+go tool cover -html=c.out
+```
+
+The source code is in one of three colors. Gray is used for lines of code that aren’t testable, green is used for code that’s been covered by a test, and red is used for code that hasn’t been tested.
+
+## Benchmarks
+
+In Go, benchmarks are functions in your test files that start with the word `Benchmark` and take in a single parameter of type `*testing.B`. This type includes all of the functionality of a `*testing.T` as well as additional support for benchmarking.
+
+```go
+var blackhole int
+
+func BenchmarkFileLen1(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        result, err := FileLen("testdata/data.txt", 1)
+        if err != nil {
+            b.Fatal(err)
+        }
+        blackhole = result
+    }
+}
+```
+
+The `blackhole` package-level variable is interesting. We write the results from `FileLen` to this package-level variable to make sure that the compiler doesn’t get too clever and decide to optimize away the call to FileLen, ruining our benchmark.
+
+Every Go benchmark must have a loop that iterates from 0 to `b.N`. The testing framework calls our benchmark functions over and over with larger and larger values for `N` until it is sure that the timing results are accurate.
+
+We run a benchmark by passing the `-bench` flag to go test. This flag expects a regular expression to describe the name of the benchmarks to run. Use `-bench=.` to run all benchmarks. A second flag, `-benchmem`, includes memory allocation information in the benchmark output. All tests are run before the benchmarks, so you can only benchmark code when tests pass.
+
+> Sample benchmark run
+
+```sh-session
+BenchmarkFileLen1-12  25  47201025 ns/op  65342 B/op  65208 allocs/op
+```
+
+Running a benchmark with memory allocation information produces output with five columns.
+
+1. _BenchmarkFileLen1-12_
+    - The name of the benchmark, a hyphen, and the value of `GOMAXPROCS` for the benchmark.
+2. _12_
+    - The number of times that the test ran to produce a stable result.
+3. _47201025 ns/op_
+    - How long it took to run a single pass of this benchmark, in nanoseconds (there are 1,000,000,000 nanoseconds in a second).
+4. _65342 B/op_
+    - The number of bytes allocated during a single pass of the benchmark.
+5. _65208 allocs/op_
+    - The number of times bytes had to be allocated from the heap during a single pass of the benchmark. This will always be less than or equal to the number of bytes allocated.
+
+> Benchmark buffers of different sizes:
+
+```go
+func BenchmarkFileLen(b *testing.B) {
+    for _, v := range []int{1, 10, 100, 1000, 10000, 100000} {
+        b.Run(fmt.Sprintf("FileLen-%d", v), func(b *testing.B) {
+            for i := 0; i < b.N; i++ {
+                result, err := FileLen("testdata/data.txt", v)
+                if err != nil {
+                    b.Fatal(err)
+                }
+                blackhole = result
+            }
+        })
+    }
+}
+```
+
+```sh-session
+BenchmarkFileLen/FileLen-1-12          25  47828842 ns/op   65342 B/op  65208 allocs/op
+BenchmarkFileLen/FileLen-10-12        230   5136839 ns/op  104488 B/op   6525 allocs/op
+BenchmarkFileLen/FileLen-100-12      2246    509619 ns/op   73384 B/op    657 allocs/op
+BenchmarkFileLen/FileLen-1000-12    16491     71281 ns/op   68744 B/op     70 allocs/op
+BenchmarkFileLen/FileLen-10000-12   42468     26600 ns/op   82056 B/op     11 allocs/op
+BenchmarkFileLen/FileLen-100000-12  36700     30473 ns/op  213128 B/op      5 allocs/op
+```
