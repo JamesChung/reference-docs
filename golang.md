@@ -1548,3 +1548,74 @@ BenchmarkFileLen/FileLen-1000-12    16491     71281 ns/op   68744 B/op     70 al
 BenchmarkFileLen/FileLen-10000-12   42468     26600 ns/op   82056 B/op     11 allocs/op
 BenchmarkFileLen/FileLen-100000-12  36700     30473 ns/op  213128 B/op      5 allocs/op
 ```
+
+## httptest
+
+```go
+server := httptest.NewServer(
+    http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+        expression := req.URL.Query().Get("expression")
+        if expression != io.expression {
+            rw.WriteHeader(http.StatusBadRequest)
+            fmt.Fprintf(rw, "expected expression '%s', got '%s'",
+                io.expression, expression)
+            return
+        }
+        rw.WriteHeader(io.code)
+        rw.Write([]byte(io.body))
+    }))
+defer server.Close()
+rs := RemoteSolver{
+    MathServerURL: server.URL,
+    Client:        server.Client(),
+}
+```
+
+The `httptest.NewServer` function creates and starts an HTTP server on a random unused port. You need to provide an `http.Handler` implementation to process the request. Since this is a server, you must close it when the test completes. The server instance has its URL specified in the `URL` field of the server instance and a preconfigured `http.Client` for communicating with the test server.
+
+## Integration Tests and Build Tags
+
+The Go compiler provides _build tags_ to control when code is compiled. Build tags are specified on the first line of a file with a magic comment that starts with `// +build`. The original intent for build tags was to allow different code to be compiled on different platforms, but they are also useful for splitting tests into groups. Tests in files without build tags run all the time. These are the unit tests that don’t have dependencies on external resources. Tests in files with a build tag are only run when the supporting resources are available.
+
+To run our integration test alongside the other tests we’ve written, use:
+
+```sh-session
+$ go test -tags integration -v ./...
+```
+
+---
+
+> Using the -short flag
+
+Another option is to use go test with the -short flag. If you want to skip over tests that take a long time, label your slow tests by placing the the following code at the start of the test function:
+
+```go
+if testing.Short() {
+    t.Skip("skipping test in short mode.")
+}
+```
+
+When you want to run only short tests, pass the `-short` flag to go test.
+
+There are a few problems with the -short flag. If you use it, there are only two levels of testing: short tests and all tests. By using build tags, you can group your integration tests, specifying which service they need in order to run. Another argument against using the -short flag to indicate integration tests is philosophical. Build tags indicate a dependency, while the -short flag is only meant to indicate that you don’t want to run tests that take a long time. Those are different concepts.
+
+## Finding Concurrency Problems with the Race Checker
+
+use the flag `-race` with `go test` to enable it:
+
+```sh-session
+$ go test -race
+==================
+WARNING: DATA RACE
+Read at 0x00c000128070 by goroutine 10:
+  test_examples/race.getCounter.func1()
+      test_examples/race/race.go:12 +0x45
+
+Previous write at 0x00c000128070 by goroutine 8:
+  test_examples/race.getCounter.func1()
+      test_examples/race/race.go:12 +0x5b
+```
+
+You can also use the `-race flag` when you build your programs. This creates a binary that includes the race checker and that reports any races it finds to the console. This allows you to find data races in code that doesn’t have tests.
+
+A binary with `-race` enabled runs approximately ten times slower than a normal binary. That isn’t a problem for test suites that take a second to run, but for large test suites that take several minutes, a 10x slowdown reduces productivity.
