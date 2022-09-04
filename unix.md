@@ -32,6 +32,13 @@ standard output (the default), and 2 is standard error.
 $ ls /fffff > file 2>&1
 ```
 
+> Newer shortcut to 2>&1 in bash
+
+``` sh
+$ ls -l /bin/usr &> ls-output.txt
+$ ls -l /bin/usr &>> ls-output.txt
+```
+
 ## Standard Input Redirection
 
 To channel a file to a program's standard input, use the `<` operator:
