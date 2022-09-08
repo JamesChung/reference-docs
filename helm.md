@@ -285,7 +285,7 @@ We can see these records with `kubectl get secret`:
 ```sh
 $ kubectl get secret
 NAME                           TYPE                                  DATA   AGE
-default-token-vjhx2            kubernetes.io/service-account-token   3      58m
+default-token                  kubernetes.io/service-account-token   3      58m
 mysite-drupal                  Opaque                                1      13m
 mysite-mariadb                 Opaque                                2      13m
 sh.helm.release.v1.mysite.v1   helm.sh/release.v1                    1      13m

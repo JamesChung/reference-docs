@@ -8,7 +8,7 @@
 |?|Matches any single character|
 |[_characters_]|Matches any character that is a member of the set _characters_|
 |[!_characters_]|Matches any character that is not a member of the set _characters_|
-|[:_class_:]|Matches any character that is a memeber of the specified _class_|
+|[:_class_:]|Matches any character that is a member of the specified _class_|
 
 ### Commonly used Character Classes
 |Character Class|Meaning|
@@ -42,6 +42,14 @@ Even if we have no terminal emulator running, several terminal sessions continue
 
 ```sh-session
 [me@linuxbox ~]$ man 5 passwd
+```
+
+## `printenv`
+
+Prints all or part of an environment
+
+```sh-session
+[me@linuxbox ~]$ printenv
 ```
 
 ## `date`
@@ -106,6 +114,13 @@ picture.jpg: JPEG image data, JFIF standard 1.01
 
 ## `type`
 
+Returns which type of command is being interpreted by the shell ie. a binary or a shell builtin
+
+```sh-session
+[me@linuxbox ~]$ type echo
+echo is a shell builtin
+```
+
 ## `less`
 
 View text files
@@ -116,8 +131,29 @@ View text files
 
 ## `which`
 
+The which utility takes a list of command names and searches the path for each executable file that would be run had these commands actually been invoked.
+
+```sh-session
+[me@linuxbox ~]$ which echo
+echo: shell built-in command
+```
+
+## `where`
+
+```sh-session
+[me@linuxbox ~]$ where echo
+echo: shell built-in command
+/bin/echo
+```
+
 ## `whereis`
 
+The whereis utility checks the standard binary, and manual page directories for the specified programs, printing out the paths of any it finds.
+
+```sh-session
+[me@linuxbox ~]$ whereis echo
+echo: /bin/echo /usr/share/man/man1/echo.1
+```
 
 ## `reboot`
 
@@ -133,4 +169,77 @@ Command is useful after a program dies leaving a terminal in an abnormal state
 
 ```sh-session
 [me@linuxbox ~]$ reset
+```
+
+## `sort`
+
+sort or merge records (lines) of text and binary files
+
+```sh-session
+[me@linuxbox ~]$ ls | sort
+Applications/
+Desktop/
+Documents/
+Downloads/
+Library/
+Movies/
+Music/
+Pictures/
+Projects/
+Public/
+go/
+```
+
+## `uniq`
+
+Report or filter out repeated lines in a file
+
+```sh-session
+[me@linuxbox ~]$ echo "first\nsecond\nsecond\nthird" | sort -r | uniq
+third
+second
+first
+```
+
+## `wc`
+
+- `-c`: The number of bytes in each input file is written to the standard output. This will cancel out any prior usage of the `-m` option.
+- `-l`: The number of lines in each input file is written to the standard output.
+- `-m`: The number of characters in each input file is written to the standard output. If the current locale does not support multibyte characters, this is equivalent to the -c option.  This will cancel out any prior usage of the `-c` option.
+- `-w`: The number of words in each input file is written to the standard output.
+
+```sh-session
+[me@linuxbox ~]$
+```
+
+## `grep`
+
+- `-i`, causes `grep` to ignore cate when performing the search
+- `-v`, tells `grep` to print only those lines that do not match the pattern
+- `-n`, tells `grep` to print the line numbers where the match occurs
+
+```sh-session
+[me@linuxbox ~]$ cat linux.md | grep -n grep
+175:## `grep`
+177:- `-i`, causes `grep` to ignore cate when performing the search
+178:- `-v`, tells `grep` to print only those lines that do not match the pattern
+179:- `-n`, tells `grep` to print the line numbers where the match occurs
+182:[me@linuxbox ~]$ grep
+```
+
+## `tee`
+
+The `tee` program reads standard input and copies it to both standard output (allowing the data to continue down the pipeline) and to one or more files.
+
+```sh-session
+[me@linuxbox ~]$ ls | tee ls-output
+```
+
+## `id`
+
+Prints real and effective user and group IDs
+
+```sh-session
+[me@linuxbox ~]$ id
+uid=500(me) gid=500(me) groups=500(me)
 ```
