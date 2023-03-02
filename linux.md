@@ -13,7 +13,7 @@
 ### Commonly used Character Classes
 |Character Class|Meaning|
 |-|-|
-|[:alnum:|Matches any alphanumeric character|
+|[:alnum:]|Matches any alphanumeric character|
 |[:alpha:]|Matches any alphabetic character|
 |[:digit:]|Matches any numeral|
 |[:lower:]|Matches any lowercase letter|
