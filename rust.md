@@ -44,9 +44,9 @@ names that users may search for them by.
 In the top-level documentation, point the user to commonly used modules,
 features, types, traits, and methods.
 
-## Creates vs. Packages
+## Crates vs. Packages
 
-A create is a Rust module hierarchy starting at a root _.rs_ file (one where you
+A crate is a Rust module hierarchy starting at a root _.rs_ file (one where you
 can use crate-level attributes like `#![feature]`) - usually something like
 _lib.rs_ or _main.rs_.
 
