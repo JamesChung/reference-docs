@@ -10,7 +10,7 @@ git worktree add path/to/folder/<existing-branch-name>
 > How do you use Git worktree add for an existing branch using a different name than the working directory with the command line?
 
 ```sh
-git worktree add <path/to/folder/> <existing-branch-name>
+git worktree add path/to/folder/ <existing-branch-name>
 ```
 
 > How do you use Git worktree add to create a new branch using the same name as the working directory with the command line?
