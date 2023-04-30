@@ -6,7 +6,7 @@
 
 `:sav[eas] file` - save file as
 
-`:clo[se]` - close current pane
+`:clo[se]` or `ctrl + wq` - close current pane
 
 `ter[minal]` - open a terminal window
 
@@ -111,3 +111,120 @@
 `ctrl + d` - move forward half a screen
 
 `ctrl + u` - move backwards half a screen
+
+## Editing
+
+`.` - repeat last command
+
+`u` - undo
+
+`U` - restore (undo) last changed line
+
+`ctrl + r` - redo
+
+`r` - replace a single character
+
+`R` - replace more than one character, until `ESC` is pressed
+
+`s` - delete character and enters insert mode
+
+`S` or `cc` - delete line and enter insert mode
+
+`C` or `c$` - change (replace) from cursor to the end of the line
+
+`cw` or `ce` - change (replace) to the end of the word
+
+`J` - join line below to the current one with one space in-between
+
+`gJ` - join line below to the current one without a space in-between
+
+`gwip` - reflow paragraph
+
+`g~` - switch case up to motion
+
+`gu` - change to lowercase up to motion
+
+`gU` - change to uppercase up to motion
+
+### Insert Mode
+
+Exit Insert Mode:
+
+> There are multiple ways to escape insert mode
+
+- `Esc`
+- `ctrl + c`
+- `ctrl + [`
+
+#### Core Commands
+
+`i` - insert before the cursor
+
+`I` - insert at the beginning of the line
+
+`a` - insert (append) after the cursor
+
+`A` - insert (append) at the end of the line
+
+`o` - append (open) a new line below the cursor
+
+`O` - append (open) a new line above the cursor
+
+#### Additional Editing
+
+`ctrl + h` - delete the character before the cursor during insert mode
+
+`ctrl + w` - delete word before the cursor during insert mode
+
+`ctrl + t` - indent (move right) line one shiftwidth during insert mode
+
+`ctrl + d` - indent (move left) line one shiftwidth during insert mode
+
+## Working with Files
+
+`e[dit] file` - edit a file in a new buffer
+
+`bn[ext]` - go to the next buffer
+
+`bp[revious]` - go the previous buffer
+
+`bd[elete]` - delete a buffer (close a file)
+
+`:ls` or `:buffers` - list all open buffers
+
+`:sp[lit] file` - open a file in a new buffer and split window
+
+`:vs[plit] file` - open a file ina new bufer and vertically split window
+
+`:vert[ical] ba[ll]` - edit all buffers as vertical windows
+
+## Window Management
+
+`ctrl + ws` - split window
+
+`ctrl + wv` - split window vertically
+
+`ctrl + ww` - switch windows
+
+`ctrl + wq` - quit a window
+
+`ctrl + wx` - exchange current window with next one
+
+`ctrl + w=` - make all windows equal height & width
+
+`ctrl + wh` - move cursor to the left window (vertical split)
+
+`ctrl + wl` - move cursor to the right window (vertical split)
+
+`ctrl + wj` - move cursor to the window below (horizontal split)
+
+`ctrl + wk` - move cursor to the window above (horizontal split)
+
+`ctrl + wH` - make current window full height at far left (leftmost vertical window)
+
+`ctrl + wL` - make current window full height at far right (rightmost vertical window)
+
+`ctrl + wJ` - make current window full width at the very bottom (bottommost horizontal window)
+
+`ctrl + wK` - make current window full width at the very top (topmost horizontal window)
+
