@@ -47,10 +47,10 @@ Exit Insert Mode:
 
 |General Editing|Insert Commands|Visual Mode|
 |:-|:-|:-|
-|`u` - undo|`i` - insert before the cursor|`v` - start visual mode, mark lines
-|`U` - restore (undo) last changed line|`I` - insert at the beginning of the line|`V` - start visual line mode, mark lines
-|`ctrl + r` - redo|`a` - insert (append) after the cursor|`ctrl + v` - start visual block mode, mark blocks
-|`r` - replace a single character|`A` - insert (append) at the end of the line|`o` - move to other end of marked area
+|`u` - undo|`i` - insert before the cursor|`v` - start visual mode, mark lines|
+|`U` - restore (undo) last changed line|`I` - insert at the beginning of the line|`V` - start visual line mode, mark lines|
+|`ctrl + r` - redo|`a` - insert (append) after the cursor|`ctrl + v` - start visual block mode, mark blocks|
+|`r` - replace a single character|`A` - insert (append) at the end of the line|`o` - move to other end of marked area|
 |`R` - replace more than one character, until `ESC` is pressed|`o` - append (open) a new line below the cursor|`O` - move to other corner of block|
 |`s` - delete character and enters insert mode|`O` - append (open) a new line above the cursor|`aw` - mark a word|
 |`S` or `cc` - delete line and enter insert mode|`ctrl + h` - delete the character before the cursor during insert mode|`ab` - a block with ()|
@@ -66,6 +66,19 @@ Exit Insert Mode:
 |||`~` - switch case|
 
 ## Search & Replace
+
+> Pair Characters can be: "", '', ``, <>, (), {}, [] and more
+`vi` + [pair character] - select everything within the next enclosing pair characters
+
+`va` + [pair character]- select everything from pair character to character
+
+`yi` + [pair character]- yank everything within the next enclosing pair characters
+
+`ya` + [pair character]- yank everything from pair character to character
+
+`di` + [pair character] - delete everything within the next enclosing pair characters
+
+`da` + [pair character] - delete everything from pair character to character
 
 ## Window Management
 
