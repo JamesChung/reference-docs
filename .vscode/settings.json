@@ -1,5 +1,7 @@
 {
   "cSpell.words": [
+    "addgroup",
+    "adduser",
     "allocs",
     "alnum",
     "backquotes",
@@ -26,6 +28,7 @@
     "httptest",
     "imag",
     "JFIF",
+    "killall",
     "kubeconfig",
     "kubectl",
     "Kubernetes",
@@ -40,9 +43,11 @@
     "noncomparable",
     "Nonreentrant",
     "packagename",
+    "poweroff",
     "preconfigured",
     "printenv",
     "Println",
+    "pstree",
     "rwxr",
     "Sprintf",
     "structs",
@@ -51,10 +56,13 @@
     "subtest",
     "SYSV",
     "testdata",
+    "tload",
     "tmpfs",
     "typealias",
     "uintptr",
     "unexported",
-    "whereis"
+    "whereis",
+    "worktree",
+    "xload"
   ]
 }
