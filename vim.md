@@ -64,6 +64,8 @@ Exit Insert Mode:
 |`gU` - change to uppercase up to motion||`u` - change marked text to lowercase|
 |`.` - repeat last command||`U` - change marked text to uppercase|
 |||`~` - switch case|
+|||`vip` - select inner paragraph only|
+|||`vap` - select entire paragraph including whitespace|
 
 ## Search & Replace
 
