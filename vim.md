@@ -9,6 +9,8 @@
 |`:clo[se]` or `ctrl + wq` - close current pane|`bp[revious]` - go the previous buffer|
 |`ter[minal]` - open a terminal window|`bd[elete]` - delete a buffer (close a file)|
 |`K` - open man page for word under the cursor|`:ls` or `:buffers` - list all open buffers|
+|`:qa` - quit all windows|
+|`:qa!` - quit all windows (no save)|
 ||`:sp[lit] file` - open a file in a new buffer and split window|
 ||`:vs[plit] file` - open a file in a new bufer and vertically split window|
 ||`:vert[ical] ba[ll]` - edit all buffers as vertical windows|
