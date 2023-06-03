@@ -3,8 +3,11 @@
 ## General
 
 > `:map` - show all current keybindings
+
 > `:nmap` - show current normal mode keybindings
+
 > `:imap` - show current insert mode keybindings
+
 > `:vmap` - show current visual mode keybindings
 
 |General|Working with Files|
