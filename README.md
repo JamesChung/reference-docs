@@ -12,3 +12,5 @@
   - [linux permissions](./linux-permissions.md)
   - [nix commands](./nix-commands.md)
   - [cron](./cron.md)
+- CLI Tools
+  - [vim](./vim.md)
