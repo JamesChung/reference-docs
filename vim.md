@@ -2,6 +2,11 @@
 
 ## General
 
+> `:map` - show all current keybindings
+> `:nmap` - show current normal mode keybindings
+> `:imap` - show current insert mode keybindings
+> `:vmap` - show current visual mode keybindings
+
 |General|Working with Files|
 |:-|:-|
 |`:h[elp] keyword` - open help for keyword|`e[dit] file` - edit a file in a new buffer|
