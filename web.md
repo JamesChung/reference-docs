@@ -2,7 +2,7 @@
 
 ## URL vs URI vs URN
 
-#![URL vs URI vs URN](images/url_uri_urn.jpg)
+![URL vs URI vs URN](images/url_uri_urn.jpg)
 
 ## URI
 
@@ -21,4 +21,3 @@ URL stands for Uniform Resource Locator, the key concept of HTTP. It is the addr
 ## URN
 
 URN stands for Uniform Resource Name. It uses the urn scheme. URNs cannot be used to locate a resource. A simple example given in the diagram is composed of a namespace and a namespace-specific string.
-
