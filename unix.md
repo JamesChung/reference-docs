@@ -91,3 +91,11 @@ tail -F [file]
 ```sh
 grep -C [int] [search]
 ```
+
+## `cat`
+
+### Get number of lines of text in all files in a given directory
+
+```sh
+cat $(find . -type f -print) | wc -l
+```
