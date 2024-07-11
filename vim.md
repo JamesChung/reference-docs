@@ -120,3 +120,24 @@ Exit Insert Mode:
 
 `ctrl + wK` - make current window full width at the very top (topmost horizontal window)
 
+## Incrementing
+
+`ctrl + a` - Increments the number under the cursor by 1
+
+`[count]ctrl + a` - Increments the number by `[count]`
+
+`ctrl + x` - Decrements the number under the cursor
+
+`[count]ctrl + x` - Decrements the number by `[count]`
+
+### Visual Mode
+
+`g ctrl-a` - Increments each number in the block, with the first number incremented by 1 etc.
+
+`g ctrl-x` - Decrements each number in the block, with the first number decremented by 1 etc.
+
+### Command Mode
+
+`:[range]normal [count]ctrl-a` - Increments numbers within the specified `[range]` of lines by `[count]`
+
+`:[range]normal [count]ctrl-x` - Decrements numbers within the specified `[range]` of lines by `[count]`
