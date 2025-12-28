@@ -20,8 +20,8 @@
 9. [Git Operations](#git-operations)
 10. [Formatting & Toggles](#formatting--toggles)
 11. [Terminal](#terminal)
-12. [Telescope](#telescope)
-13. [Fuzzy Finding (FZF)](#fuzzy-finding-fzf)
+12. [Snacks Picker](#snacks-picker)
+13. [Telescope](#telescope)
 14. [Claude Code (AI Assistant)](#claude-code-ai-assistant)
 15. [Trouble (Diagnostics)](#trouble-diagnostics)
 16. [TODO Comments](#todo-comments)
@@ -72,6 +72,7 @@
 | `r` | o | Remote Flash |
 | `R` | o, x | Treesitter Search |
 | `<C-s>` | c | Toggle Flash Search (in command mode) |
+| `<C-Space>` | n, o, x | Treesitter Incremental Selection |
 
 ---
 
@@ -101,6 +102,7 @@
 | `<leader>wd` | n | Delete window |
 | `<leader>wm` | n | Toggle window zoom |
 | `<leader>uZ` | n | Toggle window zoom (alternate) |
+| `<C-w><Space>` | n | Window Hydra Mode (which-key) |
 
 ---
 
@@ -112,12 +114,18 @@
 | `<S-l>` | n | Next buffer | `:bnext` |
 | `[b` | n | Previous buffer (alternate) | `:bprevious` |
 | `]b` | n | Next buffer (alternate) | `:bnext` |
+| `[B` | n | Move buffer prev | - |
+| `]B` | n | Move buffer next | - |
 | `<leader>bb` | n | Switch to other buffer | `:e #` |
 | `<leader>\`` | n | Switch to other buffer (alternate) | `:e #` |
 | `<leader>bd` | n | Delete buffer | `:lua Snacks.bufdelete()` |
 | `<leader>bo` | n | Delete other buffers | `:lua Snacks.bufdelete.other()` |
 | `<leader>bD` | n | Delete buffer and window | `:bd` |
-| `<leader>tb` | n | Show buffers (Telescope) | `:Telescope buffers` |
+| `<leader>bl` | n | Delete buffers to the left | - |
+| `<leader>br` | n | Delete buffers to the right | - |
+| `<leader>bp` | n | Toggle pin | - |
+| `<leader>bP` | n | Delete non-pinned buffers | - |
+| `:bd` | command | Delete buffer (aliased to Snacks.bufdelete) | `:BD` |
 
 ---
 
@@ -138,8 +146,7 @@
 | `<leader>ur` | n | Redraw, clear search, diff update |
 | `n` | n, x, o | Next search result (centered) |
 | `N` | n, x, o | Previous search result (centered) |
-| `<leader>sr` | n, x | Search and Replace |
-| `<leader>st` | n | Search TODOs |
+| `<leader>sr` | n, x | Search and Replace (grug-far) |
 
 ---
 
@@ -182,20 +189,23 @@
 | `gd` | n | Goto Definition | `:lua vim.lsp.buf.definition()` |
 | `gD` | n | Goto Declaration | `:lua vim.lsp.buf.declaration()` |
 | `gr` | n | References | `:lua vim.lsp.buf.references()` |
-| `gi` | n | Goto Implementation | `:lua vim.lsp.buf.implementation()` |
+| `gi` | n | Goto Implementation (custom override) | `:lua vim.lsp.buf.implementation()` |
+| `gI` | n | Goto Implementation (LazyVim default) | `:lua vim.lsp.buf.implementation()` |
 | `gt` | n | Goto Type Definition (custom override) | `:lua vim.lsp.buf.type_definition()` |
 | `gy` | n | Goto Type Definition (LazyVim default) | `:lua vim.lsp.buf.type_definition()` |
 | `]]` | n | Next Reference | - |
 | `[[` | n | Prev Reference | - |
 | `<A-n>` | n | Next Reference (alternate) | - |
 | `<A-p>` | n | Prev Reference (alternate) | - |
+| `gai` | n | Calls Incoming | - |
+| `gao` | n | Calls Outgoing | - |
 
 ### Documentation & Help
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
 | `K` | n | Hover documentation | `:lua vim.lsp.buf.hover()` |
 | `gK` | n | Signature Help | `:lua vim.lsp.buf.signature_help()` |
-| `<C-k>` | i | Signature Help (insert mode) | `:lua vim.lsp.buf.signature_help()` |
+| `<C-k>` | n, i | Signature Help | `:lua vim.lsp.buf.signature_help()` |
 
 ### Code Actions
 | Key | Mode | Description | Command |
@@ -205,10 +215,11 @@
 | `<D-.>` | n, v | Code Action (macOS - Cmd+.) | `:lua vim.lsp.buf.code_action()` |
 | `<leader>cA` | n | Source Action | - |
 | `<leader>cr` | n | Rename symbol (LazyVim default) | `:lua vim.lsp.buf.rename()` |
-| `<space>rn` | n | Rename symbol (custom) | `:lua vim.lsp.buf.rename()` |
+| `<leader>rn` | n | Rename symbol (custom) | `:lua vim.lsp.buf.rename()` |
 | `<leader>cR` | n | Rename File | - |
-| `<leader>cf` | n, x | Format code (LazyVim default) | `:lua vim.lsp.buf.format()` |
-| `<space>f` | n | Format code (custom) | `:lua vim.lsp.buf.format()` |
+| `<leader>cf` | n, x | Format code (LazyVim default) | - |
+| `<leader>cF` | n, x | Format Injected Langs | - |
+| `<leader>f` | n | Format code (custom async) | `:lua vim.lsp.buf.format({async=true})` |
 
 ### Code Lens
 | Key | Mode | Description | Command |
@@ -221,10 +232,9 @@
 |-----|------|-------------|---------|
 | `<leader>cl` | n | LSP Info | `:LspInfo` |
 | `<leader>cm` | n | Mason (LSP installer) | `:Mason` |
-| `<leader>cs` | n | Symbols | - |
-| `<space>wa` | n | Add workspace folder | `:lua vim.lsp.buf.add_workspace_folder()` |
-| `<space>wr` | n | Remove workspace folder | `:lua vim.lsp.buf.remove_workspace_folder()` |
-| `<space>wl` | n | List workspace folders | `:lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))` |
+| `<leader>wa` | n | Add workspace folder | `:lua vim.lsp.buf.add_workspace_folder()` |
+| `<leader>wr` | n | Remove workspace folder | `:lua vim.lsp.buf.remove_workspace_folder()` |
+| `<leader>wl` | n | List workspace folders | - |
 
 ---
 
@@ -236,10 +246,10 @@
 | `<leader>ud` | n | Toggle diagnostics | - |
 | `]d` | n | Next diagnostic | `:lua vim.diagnostic.goto_next()` |
 | `[d` | n | Previous diagnostic | `:lua vim.diagnostic.goto_prev()` |
-| `]e` | n | Next error | `:lua vim.diagnostic.goto_next({severity=vim.diagnostic.severity.ERROR})` |
-| `[e` | n | Previous error | `:lua vim.diagnostic.goto_prev({severity=vim.diagnostic.severity.ERROR})` |
-| `]w` | n | Next warning | `:lua vim.diagnostic.goto_next({severity=vim.diagnostic.severity.WARN})` |
-| `[w` | n | Previous warning | `:lua vim.diagnostic.goto_prev({severity=vim.diagnostic.severity.WARN})` |
+| `]e` | n | Next error | - |
+| `[e` | n | Previous error | - |
+| `]w` | n | Next warning | - |
+| `[w` | n | Previous warning | - |
 
 ---
 
@@ -250,12 +260,16 @@
 |-----|------|-------------|
 | `<leader>gg` | n | Lazygit (root directory) |
 | `<leader>gG` | n | Lazygit (current working directory) |
-| `<leader>gL` | n | Git log |
-| `<leader>gl` | n | Git log (root) |
+| `<leader>gL` | n | Git log (cwd) |
+| `<leader>gl` | n | Git log |
 | `<leader>gf` | n | Git history for current file |
 | `<leader>gb` | n | Git blame for current line |
 | `<leader>gB` | n, x | Open in git browser |
 | `<leader>gY` | n, x | Copy git browser URL |
+| `<leader>gd` | n | Git Diff (hunks) |
+| `<leader>gD` | n | Git Diff (origin) |
+| `<leader>gs` | n | Git Status |
+| `<leader>gS` | n | Git Stash |
 
 ### Git Hunks (Gitsigns)
 | Key | Mode | Description |
@@ -268,9 +282,14 @@
 | `<leader>ghr` | n, x | Reset hunk |
 | `<leader>ghS` | n | Stage buffer |
 | `<leader>ghu` | n | Undo stage hunk |
+| `<leader>ghR` | n | Reset buffer |
 | `<leader>ghp` | n | Preview hunk inline |
 | `<leader>ghb` | n | Blame line |
+| `<leader>ghB` | n | Blame buffer |
 | `<leader>ghd` | n | Diff this |
+| `<leader>ghD` | n | Diff this ~ |
+| `ih` | o, x | GitSigns Select Hunk |
+| `<leader>uG` | n | Toggle Git Signs |
 
 ---
 
@@ -280,8 +299,8 @@
 | Key | Mode | Description |
 |-----|------|-------------|
 | `<leader>cf` | n, x | Format code |
-| `<leader>uf` | n | Toggle auto-formatting |
-| `<leader>uF` | n | Force auto-formatting |
+| `<leader>uf` | n | Toggle auto-format (global) |
+| `<leader>uF` | n | Toggle auto-format (buffer) |
 
 ### UI Toggles
 | Key | Mode | Description |
@@ -293,14 +312,24 @@
 | `<leader>ud` | n | Toggle diagnostics |
 | `<leader>uc` | n | Toggle conceal level |
 | `<leader>uA` | n | Toggle tabline |
-| `<leader>uT` | n | Toggle treesitter |
+| `<leader>uT` | n | Toggle treesitter highlight |
 | `<leader>ub` | n | Toggle dark background |
-| `<leader>uD` | n | Toggle dim |
+| `<leader>uD` | n | Toggle dimming |
 | `<leader>ua` | n | Toggle animations |
 | `<leader>ug` | n | Toggle indent guides |
-| `<leader>uS` | n | Toggle smooth scrolling |
+| `<leader>uS` | n | Toggle smooth scroll |
 | `<leader>uh` | n | Toggle inlay hints |
 | `<leader>uz` | n | Toggle zen mode |
+| `<leader>uZ` | n | Toggle zoom mode |
+| `<leader>uC` | n | Colorschemes |
+| `<leader>un` | n | Dismiss all notifications |
+
+### Profiler Toggles
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<leader>dpp` | n | Toggle Profiler |
+| `<leader>dph` | n | Toggle Profiler Highlights |
+| `<leader>dps` | n | Profiler Scratch Buffer |
 
 ---
 
@@ -312,52 +341,117 @@
 | `<C-\`>` | n, t | Toggle terminal (ToggleTerm alternate) | `:ToggleTerm` |
 | `<C-/>` | n, t | Toggle terminal (root directory) | `:lua Snacks.terminal()` |
 | `<C-_>` | n, t | Toggle terminal (alternate binding) | `:lua Snacks.terminal()` |
-| `<leader>fT` | n | Terminal at current working directory | `:lua Snacks.terminal(nil, {cwd=vim.fn.getcwd()})` |
-| `<leader>ft` | n | Terminal at root | `:lua Snacks.terminal()` |
+| `<leader>fT` | n | Terminal at current working directory | - |
+| `<leader>ft` | n | Terminal at root | - |
+
+---
+
+## Snacks Picker
+
+Snacks is the default picker (configured via `vim.g.lazyvim_picker = "snacks"`).
+
+### File Finding
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<leader><space>` | n | Find Files (Root Dir) |
+| `<leader>ff` | n | Find Files (Root Dir) |
+| `<leader>fF` | n | Find Files (cwd) |
+| `<leader>fg` | n | Find Files (git-files) |
+| `<leader>fr` | n | Recent files |
+| `<leader>fR` | n | Recent files (cwd) |
+| `<leader>fc` | n | Find Config File |
+| `<leader>fp` | n | Projects |
+
+### Buffers
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<leader>,` | n | Buffers |
+| `<leader>fb` | n | Buffers |
+| `<leader>fB` | n | Buffers (all) |
+
+### Search
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<leader>/` | n | Grep (Root Dir) |
+| `<leader>sg` | n | Grep (Root Dir) |
+| `<leader>sG` | n | Grep (cwd) |
+| `<leader>sw` | n, x | Visual selection or word (Root Dir) |
+| `<leader>sW` | n, x | Visual selection or word (cwd) |
+| `<leader>sb` | n | Buffer Lines |
+| `<leader>sB` | n | Grep Open Buffers |
+
+### Misc Search
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<leader>:` | n | Command History |
+| `<leader>sc` | n | Command History |
+| `<leader>sC` | n | Commands |
+| `<leader>s"` | n | Registers |
+| `<leader>s/` | n | Search History |
+| `<leader>sa` | n | Autocmds |
+| `<leader>sd` | n | Diagnostics |
+| `<leader>sD` | n | Buffer Diagnostics |
+| `<leader>sh` | n | Help Pages |
+| `<leader>sH` | n | Highlights |
+| `<leader>si` | n | Icons |
+| `<leader>sj` | n | Jumps |
+| `<leader>sk` | n | Keymaps |
+| `<leader>sl` | n | Location List |
+| `<leader>sm` | n | Marks |
+| `<leader>sM` | n | Man Pages |
+| `<leader>sp` | n | Search for Plugin Spec |
+| `<leader>sq` | n | Quickfix List |
+| `<leader>sR` | n | Resume |
+| `<leader>su` | n | Undotree |
+| `<leader>ss` | n | LSP Symbols |
+| `<leader>sS` | n | LSP Workspace Symbols |
+
+### Notifications & Scratch
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<leader>n` | n | Notification History |
+| `<leader>.` | n | Toggle Scratch Buffer |
+| `<leader>S` | n | Select Scratch Buffer |
 
 ---
 
 ## Telescope
 
-### Custom Keymaps
+Custom Telescope keybindings (in addition to Snacks picker):
+
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
 | `<leader>tf` | n | Find Files (Telescope) | `:Telescope find_files` |
 | `<leader>tg` | n | Live Grep (Telescope) | `:Telescope live_grep` |
 | `<leader>tb` | n | Show Buffers (Telescope) | `:Telescope buffers` |
 | `<leader>th` | n | Show Help Tags (Telescope) | `:Telescope help_tags` |
-| `<leader>td` | n | TODO List (TodoTelescope) | `:TodoTelescope` |
-
----
-
-## Fuzzy Finding (FZF)
-
-FZF-lua is configured with `fd` to respect gitignore and exclude hidden files by default.
 
 ---
 
 ## Claude Code (AI Assistant)
 
+Uses LazyVim's default `<leader>a` prefix for all AI operations.
+
 ### Main Commands
 | Key | Mode | Description |
 |-----|------|-------------|
-| `<leader>cc` | n, v | Toggle Claude |
-| `<leader>cf` | n, v | Focus Claude |
-| `<leader>cr` | n, v | Resume Claude |
-| `<leader>cC` | n, v | Continue Claude |
+| `<leader>ac` | n | Toggle Claude |
+| `<leader>af` | n | Focus Claude |
+| `<leader>ar` | n | Resume Claude |
+| `<leader>aC` | n | Continue Claude |
 
 ### File Management
 | Key | Mode | Description |
 |-----|------|-------------|
-| `<leader>cb` | n, v | Add current buffer |
-| `<leader>cs` | v | Send selection to Claude |
-| `<leader>cs` | neo-tree | Add file from tree |
+| `<leader>ab` | n | Add current buffer |
+| `<leader>as` | v | Send selection to Claude |
+| `<leader>as` | n (file explorer) | Add file from tree |
 
 ### Diff Management
 | Key | Mode | Description |
 |-----|------|-------------|
-| `<leader>ca` | n, v | Accept diff |
-| `<leader>cd` | n, v | Deny diff |
+| `<leader>aa` | n | Accept diff |
+| `<leader>ad` | n | Deny diff |
 
 ---
 
@@ -368,10 +462,12 @@ FZF-lua is configured with `fd` to respect gitignore and exclude hidden files by
 | `<leader>tt` | n | Toggle Diagnostics (Trouble) | `:Trouble diagnostics toggle` |
 | `<leader>xx` | n | Toggle Diagnostics (alternate) | `:Trouble diagnostics toggle` |
 | `<leader>xX` | n | Buffer Diagnostics | `:Trouble diagnostics toggle filter.buf=0` |
-| `<leader>cs` | n | Symbols | `:Trouble symbols toggle` |
-| `<leader>xL` | n | Location List | `:Trouble loclist toggle` |
-| `[q` | n | Previous item | - |
-| `]q` | n | Next item | - |
+| `<leader>cs` | n | Symbols (Trouble) | `:Trouble symbols toggle` |
+| `<leader>cS` | n | LSP references/definitions/... (Trouble) | `:Trouble lsp toggle` |
+| `<leader>xL` | n | Location List (Trouble) | `:Trouble loclist toggle` |
+| `<leader>xQ` | n | Quickfix List (Trouble) | `:Trouble qflist toggle` |
+| `[q` | n | Previous Trouble/Quickfix item | - |
+| `]q` | n | Next Trouble/Quickfix item | - |
 
 ---
 
@@ -379,9 +475,10 @@ FZF-lua is configured with `fd` to respect gitignore and exclude hidden files by
 
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
-| `<leader>td` | n | Toggle TODO list | `:TodoTelescope` |
-| `<leader>xt` | n | TODO List (alternate) | `:Trouble todo toggle` |
-| `<leader>st` | n | Search TODOs | `:TodoTelescope` |
+| `<leader>xt` | n | TODO (Trouble) | `:Trouble todo toggle` |
+| `<leader>xT` | n | TODO/Fix/Fixme (Trouble) | `:Trouble todo toggle filter={tag={TODO,FIX,FIXME}}` |
+| `<leader>st` | n | Search TODOs | - |
+| `<leader>sT` | n | Search TODO/Fix/Fixme | - |
 | `]t` | n | Next TODO | - |
 | `[t` | n | Previous TODO | - |
 
@@ -393,9 +490,9 @@ FZF-lua is configured with `fd` to respect gitignore and exclude hidden files by
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
 | `<leader>fe` | n | Explorer NeoTree (Root Dir) | `:Neotree` |
-| `<leader>fE` | n | Explorer NeoTree (cwd) | `:Neotree dir=%:p:h` |
+| `<leader>fE` | n | Explorer NeoTree (cwd) | - |
 | `<leader>e` | n | Explorer NeoTree (Root Dir) | `:Neotree` |
-| `<leader>E` | n | Explorer NeoTree (cwd) | `:Neotree dir=%:p:h` |
+| `<leader>E` | n | Explorer NeoTree (cwd) | - |
 | `<leader>ge` | n | Git Explorer | `:Neotree git_status` |
 | `<leader>be` | n | Buffer Explorer | `:Neotree buffers` |
 | `:E` | command | Open Neotree (NetRW replacement) | `:Neotree` |
@@ -408,6 +505,7 @@ FZF-lua is configured with `fd` to respect gitignore and exclude hidden files by
 | `D` | Delete file/directory |
 | `R` | Rename file/directory |
 | `r` | Refresh |
+| `a` | Disabled (does nothing) |
 
 **Note:** Neo-tree follows the current file and shows filtered items (including hidden files).
 
@@ -420,8 +518,8 @@ FZF-lua is configured with `fd` to respect gitignore and exclude hidden files by
 |-----|------|-------------|---------|
 | `<S-CR>` | n | Continue/Start debugging (custom - Shift+Enter) | `:lua require('dap').continue()` |
 | `<leader>db` | n | Toggle Breakpoint | `:DapToggleBreakpoint` |
-| `<leader>dB` | n | Breakpoint Condition | `:lua require('dap').set_breakpoint(vim.fn.input('Condition: '))` |
-| `<leader>dc` | n | Run/Continue (disabled - use `<S-CR>`) | `:DapContinue` |
+| `<leader>dB` | n | Breakpoint Condition | - |
+| `<leader>dc` | n | **Disabled** (use `<S-CR>`) | - |
 | `<leader>dC` | n | Run to Cursor | `:lua require('dap').run_to_cursor()` |
 | `<leader>da` | n | Run with Args | - |
 
@@ -488,8 +586,8 @@ See [Visual Selection Movement](#visual-selection-movement-minimove) section abo
 
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
-| `<leader>ma` | n | Toggle Mason menu | `:Mason` |
-| `<leader>cm` | n | Mason (alternate) | `:Mason` |
+| `<leader>ma` | n | Toggle Mason menu (custom) | `:Mason` |
+| `<leader>cm` | n | Mason (LazyVim default) | `:Mason` |
 
 ---
 
@@ -511,11 +609,12 @@ See [Visual Selection Movement](#visual-selection-movement-minimove) section abo
 
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
-| `<leader>xq` | n | Toggle quickfix list | `:copen` / `:cclose` |
-| `<leader>xl` | n | Toggle location list | `:lopen` / `:lclose` |
+| `<leader>xq` | n | Quickfix list | - |
+| `<leader>xl` | n | Location list | - |
 | `<leader>xL` | n | Location List (Trouble) | `:Trouble loclist toggle` |
-| `[q` | n | Previous quickfix item | `:cprevious` |
-| `]q` | n | Next quickfix item | `:cnext` |
+| `<leader>xQ` | n | Quickfix List (Trouble) | `:Trouble qflist toggle` |
+| `[q` | n | Previous Trouble/Quickfix item | - |
+| `]q` | n | Next Trouble/Quickfix item | - |
 
 ---
 
@@ -524,11 +623,38 @@ See [Visual Selection Movement](#visual-selection-movement-minimove) section abo
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
 | `<leader>l` | n | Open Lazy plugin manager | `:Lazy` |
-| `<leader>L` | n | Show LazyVim changelog | `:LazyExtras` |
+| `<leader>L` | n | Show LazyVim changelog | - |
 | `<leader>qq` | n | Quit all | `:qa` |
 | `<leader>ui` | n | Inspect highlight at cursor | `:Inspect` |
 | `<leader>uI` | n | Inspect treesitter tree | `:InspectTree` |
 | `<leader>?` | n | Buffer keymaps help | - |
+
+---
+
+## Noice (Command Line & Notifications)
+
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<C-f>` | n, i, s | Scroll Forward |
+| `<C-b>` | n, i, s | Scroll Backward |
+| `<S-Enter>` | c | Redirect Cmdline |
+| `<leader>sn` | n | +noice |
+| `<leader>sna` | n | Noice All |
+| `<leader>snd` | n | Dismiss All |
+| `<leader>snh` | n | Noice History |
+| `<leader>snl` | n | Noice Last Message |
+| `<leader>snt` | n | Noice Picker |
+
+---
+
+## Session Management (Persistence)
+
+| Key | Mode | Description |
+|-----|------|-------------|
+| `<leader>qs` | n | Restore Session |
+| `<leader>qS` | n | Select Session |
+| `<leader>ql` | n | Restore Last Session |
+| `<leader>qd` | n | Don't Save Current Session |
 
 ---
 
@@ -539,8 +665,9 @@ These are prefix groups for organizing keymaps:
 | Prefix | Group Name |
 |--------|-----------|
 | `<leader><tab>` | Tabs |
+| `<leader>a` | AI (Claude Code) |
 | `<leader>b` | Buffer |
-| `<leader>c` | Code / Claude (lowercase) |
+| `<leader>c` | Code |
 | `<leader>C` | Code Actions (capital C - custom LSP) |
 | `<leader>d` | Debug (DAP) |
 | `<leader>dp` | Profiler |
@@ -549,43 +676,17 @@ These are prefix groups for organizing keymaps:
 | `<leader>gh` | Git Hunks |
 | `<leader>q` | Quit/Session |
 | `<leader>s` | Search |
-| `<leader>t` | Telescope/Todo/Trouble |
+| `<leader>sn` | Noice |
+| `<leader>t` | Telescope/Trouble |
 | `<leader>T` | Neotest (Testing) - uses CAPITAL T |
 | `<leader>u` | UI Toggles |
 | `<leader>w` | Windows |
 | `<leader>x` | Diagnostics/Quickfix |
-
----
-
-## Lua Development (for .lua files)
-
-| Key | Mode | Description |
-|-----|------|-------------|
-| `<localleader>r` | n, x | Execute Lua code |
-
----
-
-## Additional Plugins
-
-### Vim Fugitive
-Git integration plugin with standard Fugitive commands (`:Git`, `:Gread`, `:Gwrite`, etc.)
-
-### Git Blame
-Shows git blame information inline
-
-### Colorizer
-Automatically highlights color codes
-
-### Tailwind Tools
-Provides tailwind CSS utilities (keymaps defined by plugin)
-
-### Blink.cmp (Completion)
-| Key | Mode | Description |
-|-----|------|-------------|
-| `<Tab>` | i | Accept completion |
-| `<CR>` | i | Disabled (configured to do nothing) |
-
-**Note:** Auto-show for completion menu is disabled; completions appear on demand.
+| `g` | Goto |
+| `gs` | Surround |
+| `z` | Fold |
+| `[` | Prev |
+| `]` | Next |
 
 ---
 
@@ -593,11 +694,13 @@ Provides tailwind CSS utilities (keymaps defined by plugin)
 
 - **Leader Key:** Space (`<Space>`)
 - **Local Leader Key:** Backslash (`\`)
-- **Tab Width:** 4 spaces
+- **Default Picker:** Snacks (configured via `vim.g.lazyvim_picker = "snacks"`)
+- **Tab Width:** 4 spaces (auto-detected per file)
 - **Line Numbers:** Relative line numbers enabled
 - **Scrolloff:** 10 lines
 - **Colorscheme:** rose-pine
 - **Terminal:** Uses ToggleTerm with floating direction
+- **NetRW:** Disabled (using Neo-tree instead)
 
 ### LSP Servers Configured
 - bashls (Bash)
@@ -609,21 +712,34 @@ Provides tailwind CSS utilities (keymaps defined by plugin)
 - vimls (VimScript)
 - Plus all language servers from enabled LazyVim language extras
 
+### Enabled LazyVim Extras
+**Language:** Angular, Clangd, CMake, Dart, Docker, Git, Go, Helm, Java, JSON, Kotlin, Markdown, Prisma, Python, Rust, SQL, Svelte, Tailwind, Terraform, TeX, TOML, TypeScript, Vue, YAML, Zig
+
+**AI:** Claude Code
+
+**Coding:** mini-surround
+
+**DAP/Testing:** dap.core, test.core
+
+**Editor:** mini-move, navic, overseer
+
+**Util:** dot, rest
+
 ### Disabled Features
-- Noice LSP hover and signature (using native LSP floating windows)
 - Snacks.nvim explorer (using Neo-tree instead)
-- Virtual text diagnostics (using virtual lines for current line only)
-- Blink.cmp auto-show menu (manual trigger only)
+- `<leader>dc` for DAP continue (using `<S-CR>` instead)
+- All lowercase `<leader>t*` neotest bindings (using `<leader>T*` instead)
 
 ---
 
 ## Resources
 
 - [LazyVim Documentation](https://lazyvim.github.io/)
+- [LazyVim Keymaps Reference](https://lazyvim.github.io/keymaps)
 - [Neovim Documentation](https://neovim.io/doc/)
 - [Mini.nvim Documentation](https://github.com/echasnovski/mini.nvim)
-- [Telescope Documentation](https://github.com/nvim-telescope/telescope.nvim)
+- [Snacks.nvim Documentation](https://github.com/folke/snacks.nvim)
 
 ---
 
-*Last Updated: 2025-01-22*
+*Last Updated: 2025-12-28*
