@@ -422,14 +422,16 @@ Snacks is the default picker (configured via `vim.g.lazyvim_picker = "snacks"`).
 
 ## Telescope
 
-Custom Telescope keybindings (in addition to Snacks picker):
+Telescope is installed for plugin compatibility but Snacks picker is the default. No custom keybindings are defined.
 
-| Key | Mode | Description | Command |
-|-----|------|-------------|---------|
-| `<leader>tf` | n | Find Files (Telescope) | `:Telescope find_files` |
-| `<leader>tg` | n | Live Grep (Telescope) | `:Telescope live_grep` |
-| `<leader>tb` | n | Show Buffers (Telescope) | `:Telescope buffers` |
-| `<leader>th` | n | Show Help Tags (Telescope) | `:Telescope help_tags` |
+To use Telescope directly, you can call commands manually:
+
+| Command | Description |
+|---------|-------------|
+| `:Telescope find_files` | Find files |
+| `:Telescope live_grep` | Live grep |
+| `:Telescope buffers` | Show buffers |
+| `:Telescope help_tags` | Show help tags |
 
 ---
 
@@ -464,8 +466,7 @@ Uses LazyVim's default `<leader>a` prefix for all AI operations.
 
 | Key | Mode | Description | Command |
 |-----|------|-------------|---------|
-| `<leader>tt` | n | Toggle Diagnostics (Trouble) | `:Trouble diagnostics toggle` |
-| `<leader>xx` | n | Toggle Diagnostics (alternate) | `:Trouble diagnostics toggle` |
+| `<leader>xx` | n | Diagnostics (Trouble) | `:Trouble diagnostics toggle` |
 | `<leader>xX` | n | Buffer Diagnostics | `:Trouble diagnostics toggle filter.buf=0` |
 | `<leader>cs` | n | Symbols (Trouble) | `:Trouble symbols toggle` |
 | `<leader>cS` | n | LSP references/definitions/... (Trouble) | `:Trouble lsp toggle` |
@@ -682,8 +683,8 @@ These are prefix groups for organizing keymaps:
 | `<leader>q` | Quit/Session |
 | `<leader>s` | Search |
 | `<leader>sn` | Noice |
-| `<leader>t` | Telescope/Trouble |
-| `<leader>T` | Neotest (Testing) - uses CAPITAL T |
+| `<leader>t` | Test (Neotest - LazyVim default) |
+| `<leader>T` | Test (Neotest - custom capital T bindings) |
 | `<leader>u` | UI Toggles |
 | `<leader>w` | Windows |
 | `<leader>x` | Diagnostics/Quickfix |
@@ -727,6 +728,10 @@ Based on installed plugins (not via LazyVim Extras):
 - Snacks.nvim explorer (using Neo-tree instead)
 - `<leader>dc` for DAP continue (using `<S-CR>` instead)
 - All lowercase `<leader>t*` neotest bindings (using `<leader>T*` instead)
+
+### Keybind Notes
+- `<C-space>` - blink.cmp (insert mode) and Flash (normal/visual mode) coexist in different modes
+- `<C-t>` - toggleterm overrides Vim tag stack (acceptable if not using ctags)
 
 ---
 
