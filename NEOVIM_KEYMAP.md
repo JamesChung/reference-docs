@@ -205,7 +205,8 @@
 |-----|------|-------------|---------|
 | `K` | n | Hover documentation | `:lua vim.lsp.buf.hover()` |
 | `gK` | n | Signature Help | `:lua vim.lsp.buf.signature_help()` |
-| `<C-k>` | n, i | Signature Help | `:lua vim.lsp.buf.signature_help()` |
+| `<C-k>` | n | Signature Help (custom) | `:lua vim.lsp.buf.signature_help()` |
+| `<C-k>` | i | Signature Help (LazyVim default) | `:lua vim.lsp.buf.signature_help()` |
 
 ### Code Actions
 | Key | Mode | Description | Command |
@@ -263,13 +264,17 @@
 | `<leader>gL` | n | Git log (cwd) |
 | `<leader>gl` | n | Git log |
 | `<leader>gf` | n | Git history for current file |
-| `<leader>gb` | n | Git blame for current line |
-| `<leader>gB` | n, x | Open in git browser |
+| `<leader>gb` | n | Git log for current line (Snacks picker) |
+| `<leader>gB` | n, x | Git browse (open in browser) |
 | `<leader>gY` | n, x | Copy git browser URL |
 | `<leader>gd` | n | Git Diff (hunks) |
 | `<leader>gD` | n | Git Diff (origin) |
 | `<leader>gs` | n | Git Status |
 | `<leader>gS` | n | Git Stash |
+| `<leader>gi` | n | GitHub Issues (open) |
+| `<leader>gI` | n | GitHub Issues (all) |
+| `<leader>gp` | n | GitHub Pull Requests (open) |
+| `<leader>gP` | n | GitHub Pull Requests (all) |
 
 ### Git Hunks (Gitsigns)
 | Key | Mode | Description |
@@ -477,10 +482,10 @@ Uses LazyVim's default `<leader>a` prefix for all AI operations.
 |-----|------|-------------|---------|
 | `<leader>xt` | n | TODO (Trouble) | `:Trouble todo toggle` |
 | `<leader>xT` | n | TODO/Fix/Fixme (Trouble) | `:Trouble todo toggle filter={tag={TODO,FIX,FIXME}}` |
-| `<leader>st` | n | Search TODOs | - |
-| `<leader>sT` | n | Search TODO/Fix/Fixme | - |
-| `]t` | n | Next TODO | - |
-| `[t` | n | Previous TODO | - |
+| `<leader>st` | n | Search TODOs (Snacks picker) | `:lua Snacks.picker.todo_comments()` |
+| `<leader>sT` | n | Search TODO/Fix/Fixme | `:lua Snacks.picker.todo_comments({keywords={"TODO","FIX","FIXME"}})` |
+| `]t` | n | Next TODO comment | - |
+| `[t` | n | Previous TODO comment | - |
 
 ---
 
@@ -712,18 +717,11 @@ These are prefix groups for organizing keymaps:
 - vimls (VimScript)
 - Plus all language servers from enabled LazyVim language extras
 
-### Enabled LazyVim Extras
-**Language:** Angular, Clangd, CMake, Dart, Docker, Git, Go, Helm, Java, JSON, Kotlin, Markdown, Prisma, Python, Rust, SQL, Svelte, Tailwind, Terraform, TeX, TOML, TypeScript, Vue, YAML, Zig
+### Installed Language Support
+Based on installed plugins (not via LazyVim Extras):
+- Clangd, CMake, Dart, Go, Helm, Markdown, Python, Rust, Tailwind, Terraform, TeX, Zig
 
-**AI:** Claude Code
-
-**Coding:** mini-surround
-
-**DAP/Testing:** dap.core, test.core
-
-**Editor:** mini-move, navic, overseer
-
-**Util:** dot, rest
+**Note:** LazyVim Extras (`lazyvim.json`) is empty. Language support comes from manually installed plugins.
 
 ### Disabled Features
 - Snacks.nvim explorer (using Neo-tree instead)
@@ -742,4 +740,4 @@ These are prefix groups for organizing keymaps:
 
 ---
 
-*Last Updated: 2025-12-28*
+*Last Updated: 2025-12-29*
